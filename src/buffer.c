@@ -165,6 +165,10 @@ void cmark_strbuf_puts(cmark_strbuf *buf, const char *string) {
                    cmark_strbuf_safe_strlen(string));
 }
 
+const char *cmark_strbuf_get(cmark_strbuf *buf) {
+  return (const char *) buf->ptr;
+}
+
 void cmark_strbuf_copy_cstr(char *data, bufsize_t datasize,
                             const cmark_strbuf *buf) {
   bufsize_t copylen;
