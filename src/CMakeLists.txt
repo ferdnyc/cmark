@@ -39,6 +39,7 @@ set(LIBRARY_SOURCES
   houdini_html_u.c
   cmark_ctype.c
   hash.c
+  linked_list.c
   ${HEADERS}
   )
 
