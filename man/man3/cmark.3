@@ -630,16 +630,13 @@ Render a \f[I]node\f[] tree as a LaTeX document.
 Character buffer interface
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_init\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t initial_size\f[])
+\fIcmark_strbuf *\f[] \fBcmark_strbuf_new\f[](\fIcmark_bufsize_t initial_size\f[])
 
 .PP
-Initialize a cmark_strbuf structure.
-.PP
-For the cases where GH_BUF_INIT cannot be used to do static
-initialization.
+Create a new buffer with size \f[I]initial size\f[]
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_grow\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t target_size\f[])
+\fIvoid\f[] \fBcmark_strbuf_grow\f[](\fIcmark_strbuf *buf\f[], \fIcmark_bufsize_t target_size\f[])
 
 .PP
 Grow the buffer to hold at least \f[C]target_size\f[] bytes.
@@ -648,7 +645,7 @@ Grow the buffer to hold at least \f[C]target_size\f[] bytes.
 \fIvoid\f[] \fBcmark_strbuf_free\f[](\fIcmark_strbuf *buf\f[])
 
 .PP
-Free the memory allocated for the buffer.
+Free \f[I]buf\f[].
 
 .PP
 \fIvoid\f[] \fBcmark_strbuf_swap\f[](\fIcmark_strbuf *buf_a\f[], \fIcmark_strbuf *buf_b\f[])
@@ -657,10 +654,10 @@ Free the memory allocated for the buffer.
 Swap \f[I]buf_a\f[] and \f[I]buf_b\f[].
 
 .PP
-\fIbufsize_t\f[] \fBcmark_strbuf_len\f[](\fIconst cmark_strbuf *buf\f[])
+\fIcmark_bufsize_t\f[] \fBcmark_strbuf_size\f[](\fIconst cmark_strbuf *buf\f[])
 
 .PP
-Get the length of \f[I]buf\f[].
+Get the size in bytes of \f[I]buf\f[].
 
 .PP
 \fIint\f[] \fBcmark_strbuf_cmp\f[](\fIconst cmark_strbuf *a\f[], \fIconst cmark_strbuf *b\f[])
@@ -668,29 +665,26 @@ Get the length of \f[I]buf\f[].
 .PP
 Compare \f[I]a\f[] and \f[I]b\f[] contents, return 0 if they are the
 same.
+.PP
+Return a negative value is a < b, a positive value if a > b.
 
 .PP
-.nf
-\fC
-.RS 0n
-unsigned char *cmark_strbuf_detach(cmark_strbuf *buf);
-.RE
-\f[]
-.fi
-
-.PP
-Obtain an allocated char array from a statically allocated string
-buffer. FIXME not really sure about this description.
-
-.PP
-\fIvoid\f[] \fBcmark_strbuf_copy_cstr\f[](\fIchar *data\f[], \fIbufsize_t datasize\f[], \fIconst cmark_strbuf *buf\f[])
+\fIvoid\f[] \fBcmark_strbuf_copy_cstr\f[](\fIchar *data\f[], \fIcmark_bufsize_t datasize\f[], \fIconst cmark_strbuf *buf\f[])
 
 .PP
 Copy the contents of \f[I]buf\f[] to a previously allocated
 \f[I]data\f[] pointer
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_set\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIbufsize_t len\f[])
+\fIconst char *\f[] \fBcmark_strbuf_get\f[](\fIcmark_strbuf *buf\f[])
+
+.PP
+Get the contents of \f[I]buf\f[].
+.PP
+The returned string is guaranteed to be NULL\-terminated.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_set\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIcmark_bufsize_t len\f[])
 
 .PP
 Set the contents of \f[I]buf\f[] to the given \f[I]data\f[]
@@ -709,7 +703,7 @@ Set the contents of \f[I]buf\f[] to the given NULL\-terminated
 Append the character \f[I]c\f[] to \f[I]buf\f[]
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_put\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIbufsize_t len\f[])
+\fIvoid\f[] \fBcmark_strbuf_put\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIcmark_bufsize_t len\f[])
 
 .PP
 Append the given \f[I]data\f[] to \f[I]buf\f[]
@@ -727,30 +721,34 @@ Append the given NULL\-terminated \f[I]string\f[] to \f[I]buf\f[]
 Reset \f[I]buf\f[] to the empty state
 
 .PP
-\fIbufsize_t\f[] \fBcmark_strbuf_strchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIbufsize_t pos\f[])
+\fIcmark_bufsize_t\f[] \fBcmark_strbuf_strchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIcmark_bufsize_t pos\f[])
 
 .PP
-Equivalent of the standard
-strchr (http://www.cplusplus.com/reference/cstring/strchr/) function.
+Return the index in \f[I]buf\f[] where \f[I]c\f[] is first encountered,
+starting from \f[I]pos\f[].
+.PP
+Return \-1 if \f[I]c\f[] isn't encountered.
 
 .PP
-\fIbufsize_t\f[] \fBcmark_strbuf_strrchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIbufsize_t pos\f[])
+\fIcmark_bufsize_t\f[] \fBcmark_strbuf_strrchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIcmark_bufsize_t pos\f[])
 
 .PP
-Equivalent of the standard
-strrchr (http://www.cplusplus.com/reference/cstring/strrchr/) function.
+Return the index in \f[I]buf\f[] where \f[I]c\f[] is last encountered,
+starting from \f[I]pos\f[].
+.PP
+Return \-1 if \f[I]c\f[] isn't encountered.
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_drop\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t n\f[])
+\fIvoid\f[] \fBcmark_strbuf_drop\f[](\fIcmark_strbuf *buf\f[], \fIcmark_bufsize_t n\f[])
 
 .PP
-Drop \f[I]n\f[] characters from the beginning of \f[I]buf\f[].
+Drop \f[I]n\f[] bytes from the beginning of \f[I]buf\f[].
 
 .PP
-\fIvoid\f[] \fBcmark_strbuf_truncate\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t len\f[])
+\fIvoid\f[] \fBcmark_strbuf_truncate\f[](\fIcmark_strbuf *buf\f[], \fIcmark_bufsize_t len\f[])
 
 .PP
-Drop \f[I]len\f[] characters from the end of \f[I]buf\f[].
+Truncate buf to len bytes if its size is greater than len.
 
 .PP
 \fIvoid\f[] \fBcmark_strbuf_rtrim\f[](\fIcmark_strbuf *buf\f[])
