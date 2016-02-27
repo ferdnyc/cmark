@@ -536,6 +536,13 @@ CMARK_EXPORT
 void cmark_strbuf_copy_cstr(char *data, cmark_bufsize_t datasize,
                             const cmark_strbuf *buf);
 
+/** Get the contents of 'buf'.
+ *
+ * The returned string is guaranteed to be NULL-terminated.
+ */
+CMARK_EXPORT
+const char * cmark_strbuf_get(cmark_strbuf *buf);
+
 /** Set the contents of 'buf' to the given 'data'
  */
 CMARK_EXPORT
