@@ -15,6 +15,7 @@ set(HEADERS
   houdini.h
   cmark_ctype.h
   render.h
+  hash.h
   )
 set(LIBRARY_SOURCES
   cmark.c
@@ -37,6 +38,7 @@ set(LIBRARY_SOURCES
   houdini_html_e.c
   houdini_html_u.c
   cmark_ctype.c
+  hash.c
   ${HEADERS}
   )
 
