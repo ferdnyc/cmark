@@ -524,6 +524,8 @@ CMARK_EXPORT
 cmark_bufsize_t cmark_strbuf_size(const cmark_strbuf *buf);
 
 /**Compare 'a' and 'b' contents, return 0 if they are the same.
+ *
+ * Return a negative value is a < b, a positive value if a > b.
  */
 CMARK_EXPORT
 int cmark_strbuf_cmp(const cmark_strbuf *a, const cmark_strbuf *b);
@@ -566,24 +568,28 @@ void cmark_strbuf_puts(cmark_strbuf *buf, const char *string);
 CMARK_EXPORT
 void cmark_strbuf_clear(cmark_strbuf *buf);
 
-/** Equivalent of the standard
- * [strchr](http://www.cplusplus.com/reference/cstring/strchr/) function.
+/** Return the index in 'buf' where 'c' is first encountered, starting from
+ * 'pos'.
+ *
+ * Return -1 if 'c' isn't encountered.
  */
 CMARK_EXPORT
 cmark_bufsize_t cmark_strbuf_strchr(const cmark_strbuf *buf, int c, cmark_bufsize_t pos);
 
-/** Equivalent of the standard
- * [strrchr](http://www.cplusplus.com/reference/cstring/strrchr/) function.
+/** Return the index in 'buf' where 'c' is last encountered, starting from
+ * 'pos'.
+ *
+ * Return -1 if 'c' isn't encountered.
  */
 CMARK_EXPORT
 cmark_bufsize_t cmark_strbuf_strrchr(const cmark_strbuf *buf, int c, cmark_bufsize_t pos);
 
-/** Drop 'n' characters from the beginning of 'buf'.
+/** Drop 'n' bytes from the beginning of 'buf'.
  */
 CMARK_EXPORT
 void cmark_strbuf_drop(cmark_strbuf *buf, cmark_bufsize_t n);
 
-/** Drop 'len' characters from the end of 'buf'.
+/** Truncate buf to len bytes if its size is greater than len.
  */
 CMARK_EXPORT
 void cmark_strbuf_truncate(cmark_strbuf *buf, cmark_bufsize_t len);
