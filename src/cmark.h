@@ -93,6 +93,46 @@ typedef int cmark_bufsize_t;
 typedef void (*CMarkNodeUserDataFreeFunc) (void *user_data);
 
 /**
+ * ## Basic data structures
+ *
+ * To keep dependencies to the strict minimum, libcmark implements
+ * its own versions of "classic" data structures.
+ */
+
+/**
+ * ### Linked list
+ */
+
+/** A generic singly linked list.
+ */
+typedef struct _cmark_llist
+{
+  struct _cmark_llist *next;
+  void         *data;
+} cmark_llist;
+
+typedef void (*CMarkListFreeFunc)(void *data);
+
+/** Append an element to the linked list, return the possibly modified
+ * head of the list.
+ */
+CMARK_EXPORT
+cmark_llist * cmark_llist_append    (cmark_llist       * head,
+                                     void              * data);
+
+/** Free the list starting with 'head', calling 'free_func' with the
+ *  data pointer of each of its elements
+ */
+CMARK_EXPORT
+void          cmark_llist_free_full (cmark_llist       * head,
+                                     CMarkListFreeFunc   free_func);
+
+/** Free the list starting with 'head'
+ */
+CMARK_EXPORT
+void          cmark_llist_free      (cmark_llist       * head);
+
+/**
  * ## Creating and Destroying Nodes
  */
 
