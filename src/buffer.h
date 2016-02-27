@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define bufsize_t cmark_bufsize_t
+
 struct cmark_strbuf {
   unsigned char *ptr;
   bufsize_t asize, size;

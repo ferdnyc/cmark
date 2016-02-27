@@ -87,7 +87,7 @@ typedef struct cmark_parser cmark_parser;
 typedef struct cmark_iter cmark_iter;
 typedef struct cmark_strbuf cmark_strbuf;
 
-typedef int bufsize_t;
+typedef int cmark_bufsize_t;
 
 /**
  * ## Creating and Destroying Nodes
@@ -510,12 +510,12 @@ extern unsigned char cmark_strbuf__initbuf[];
  * initialization.
  */
 CMARK_EXPORT
-void cmark_strbuf_init(cmark_strbuf *buf, bufsize_t initial_size);
+void cmark_strbuf_init(cmark_strbuf *buf, cmark_bufsize_t initial_size);
 
 /** Grow the buffer to hold at least `target_size` bytes.
  */
 CMARK_EXPORT
-void cmark_strbuf_grow(cmark_strbuf *buf, bufsize_t target_size);
+void cmark_strbuf_grow(cmark_strbuf *buf, cmark_bufsize_t target_size);
 
 /** Free the memory allocated for the buffer.
  */
@@ -530,7 +530,7 @@ void cmark_strbuf_swap(cmark_strbuf *buf_a, cmark_strbuf *buf_b);
 /** Get the length of 'buf'.
  */
 CMARK_EXPORT
-bufsize_t cmark_strbuf_len(const cmark_strbuf *buf);
+cmark_bufsize_t cmark_strbuf_len(const cmark_strbuf *buf);
 
 /**Compare 'a' and 'b' contents, return 0 if they are the same.
  */
@@ -546,14 +546,14 @@ unsigned char *cmark_strbuf_detach(cmark_strbuf *buf);
 /** Copy the contents of 'buf' to a previously allocated 'data' pointer
  */
 CMARK_EXPORT
-void cmark_strbuf_copy_cstr(char *data, bufsize_t datasize,
+void cmark_strbuf_copy_cstr(char *data, cmark_bufsize_t datasize,
                             const cmark_strbuf *buf);
 
 /** Set the contents of 'buf' to the given 'data'
  */
 CMARK_EXPORT
 void cmark_strbuf_set(cmark_strbuf *buf, const unsigned char *data,
-                      bufsize_t len);
+                      cmark_bufsize_t len);
 
 /** Set the contents of 'buf' to the given NULL-terminated 'string'
  */
@@ -569,7 +569,7 @@ void cmark_strbuf_putc(cmark_strbuf *buf, int c);
  */
 CMARK_EXPORT
 void cmark_strbuf_put(cmark_strbuf *buf, const unsigned char *data,
-                      bufsize_t len);
+                      cmark_bufsize_t len);
 
 /** Append the given NULL-terminated 'string' to 'buf'
  */
@@ -585,23 +585,23 @@ void cmark_strbuf_clear(cmark_strbuf *buf);
  * [strchr](http://www.cplusplus.com/reference/cstring/strchr/) function.
  */
 CMARK_EXPORT
-bufsize_t cmark_strbuf_strchr(const cmark_strbuf *buf, int c, bufsize_t pos);
+cmark_bufsize_t cmark_strbuf_strchr(const cmark_strbuf *buf, int c, cmark_bufsize_t pos);
 
 /** Equivalent of the standard
  * [strrchr](http://www.cplusplus.com/reference/cstring/strrchr/) function.
  */
 CMARK_EXPORT
-bufsize_t cmark_strbuf_strrchr(const cmark_strbuf *buf, int c, bufsize_t pos);
+cmark_bufsize_t cmark_strbuf_strrchr(const cmark_strbuf *buf, int c, cmark_bufsize_t pos);
 
 /** Drop 'n' characters from the beginning of 'buf'.
  */
 CMARK_EXPORT
-void cmark_strbuf_drop(cmark_strbuf *buf, bufsize_t n);
+void cmark_strbuf_drop(cmark_strbuf *buf, cmark_bufsize_t n);
 
 /** Drop 'len' characters from the end of 'buf'.
  */
 CMARK_EXPORT
-void cmark_strbuf_truncate(cmark_strbuf *buf, bufsize_t len);
+void cmark_strbuf_truncate(cmark_strbuf *buf, cmark_bufsize_t len);
 
 /** Trim whitespaces at the end of 'buf'
  */
