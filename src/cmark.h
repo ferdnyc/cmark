@@ -87,6 +87,8 @@ typedef struct cmark_node cmark_node;
 typedef struct cmark_parser cmark_parser;
 typedef struct cmark_iter cmark_iter;
 typedef struct cmark_strbuf cmark_strbuf;
+typedef struct cmark_plugin cmark_plugin;
+typedef struct cmark_syntax_extension cmark_syntax_extension;
 
 typedef int cmark_bufsize_t;
 
@@ -131,6 +133,22 @@ void          cmark_llist_free_full (cmark_llist       * head,
  */
 CMARK_EXPORT
 void          cmark_llist_free      (cmark_llist       * head);
+
+/**
+ * ## Initialization
+ */
+
+/** Initialize the cmark library. This will discover available plugins.
+ *  Returns 'true' if initialization was successful, 'false' otherwise.
+ */
+CMARK_EXPORT
+bool cmark_init(void);
+
+/** Deinitialize the cmark library. This will release all plugins.
+ *  Returns true if deinitialization was successful, 'false' otherwise.
+ */
+CMARK_EXPORT
+bool cmark_deinit(void);
 
 /**
  * ## Creating and Destroying Nodes
@@ -429,6 +447,16 @@ CMARK_EXPORT const char *cmark_node_get_on_exit(cmark_node *node);
  */
 CMARK_EXPORT int cmark_node_set_on_exit(cmark_node *node, const char *on_exit);
 
+/** Get the syntax extension responsible for the creation of 'node'.
+ *  Return NULL if 'node' was created because it matched standard syntax rules.
+ */
+CMARK_EXPORT cmark_syntax_extension *cmark_node_get_syntax_extension(cmark_node *node);
+
+/** Set the syntax extension responsible for creating 'node'.
+ */
+CMARK_EXPORT bool cmark_node_set_syntax_extension(cmark_node *node,
+                                                  cmark_syntax_extension *extension);
+
 /** Returns the line on which 'node' begins.
  */
 CMARK_EXPORT int cmark_node_get_start_line(cmark_node *node);
@@ -524,6 +552,16 @@ void cmark_parser_feed(cmark_parser *parser, const char *buffer, size_t len);
  */
 CMARK_EXPORT
 cmark_node *cmark_parser_finish(cmark_parser *parser);
+
+/** Attach the syntax 'extension' to the 'parser', to provide extra syntax
+ *  rules.
+ *  See the documentation for cmark_syntax_extension for more information.
+ *
+ *  Returns 'true' if the 'extension' was successfully attached,
+ *  'false' otherwise.
+ */
+CMARK_EXPORT
+bool cmark_parser_attach_syntax_extension(cmark_parser *parser, cmark_syntax_extension *extension);
 
 /** Parse a CommonMark document in 'buffer' of length 'len'.
  * Returns a pointer to a tree of nodes.
@@ -690,6 +728,154 @@ void cmark_parser_advance_offset(cmark_parser *parser,
                                  const char *input,
                                  int count,
                                  bool columns);
+
+/**
+ * ## Extension Support
+ *
+ * While the "core" of libcmark is strictly compliant with the
+ * specification, an API is provided for extension writers to
+ * hook into the parsing process.
+ *
+ * It should be noted that the cmark_node API already offers
+ * room for customization, with methods offered to traverse and
+ * modify the AST, and even define custom blocks.
+ * When the desired customization is achievable in an error-proof
+ * way using that API, it should be the preferred method.
+ *
+ * The following API requires a more in-depth understanding
+ * of libcmark's parsing strategy, which is exposed
+ * [here](http://spec.commonmark.org/0.24/#appendix-a-parsing-strategy).
+ *
+ * It should be used when "a posteriori" modification of the AST
+ * proves to be too difficult / impossible to implement correctly.
+ *
+ * It can also serve as an intermediary step before extending
+ * the specification, as an extension implemented using this API
+ * will be trivially integrated in the core if it proves to be
+ * desirable.
+ */
+
+/**
+ * ### Plugin API.
+ *
+ * Extensions should be distributed as dynamic libraries,
+ * with a single exported function named after the distributed
+ * filename.
+ *
+ * When discovering extensions (see cmark_init), cmark will
+ * try to load a symbol named "init_{{filename}}" in all the
+ * dynamic libraries it encounters.
+ *
+ * For example, given a dynamic library named myextension.so
+ * (or myextension.dll), cmark will try to load the symbol
+ * named "init_myextension". This means that the filename
+ * must lend itself to forming a valid C identifier, with
+ * the notable exception of dashes, which will be translated
+ * to underscores, which means cmark will look for a function
+ * named "init_my_extension" if it encounters a dynamic library
+ * named "my-extension.so".
+ *
+ * See the 'PluginInitFunc' typedef for the exact prototype
+ * this function should follow.
+ *
+ * For now the extensibility of cmark is not complete, as
+ * it only offers API to hook into the block parsing phase
+ * (<http://spec.commonmark.org/0.24/#phase-1-block-structure>).
+ *
+ * See 'cmark_plugin_register_syntax_extension' for more information.
+ */
+
+/** The prototype plugins' init function should follow.
+ */
+typedef bool (*PluginInitFunc)(cmark_plugin *plugin);
+
+/** Register a syntax 'extension' with the 'plugin', it will be made
+ * available as an extension and, if attached to a cmark_parser
+ * with 'cmark_parser_attach_syntax_extension', it will contribute
+ * to the block parsing process.
+ *
+ * See the documentation for 'cmark_syntax_extension' for information
+ * on how to implement one.
+ *
+ * This function will typically be called from the init function
+ * of external modules.
+ *
+ * This takes ownership of 'extension', one should not call
+ * 'cmark_syntax_extension_free' on a registered extension.
+ */
+CMARK_EXPORT
+bool cmark_plugin_register_syntax_extension(cmark_plugin *plugin,
+                                            cmark_syntax_extension *extension);
+
+/** This will search for the syntax extension named 'name' among the
+ *  registered syntax extensions.
+ *
+ *  It can then be attached to a cmark_parser
+ *  with the cmark_parser_attach_syntax_extension method.
+ */
+CMARK_EXPORT
+cmark_syntax_extension *cmark_find_syntax_extension(const char *name);
+
+/** Should create and add a new open block to 'parent_container' if
+ * 'input' matches a syntax rule for that block type. It is allowed
+ * to modify the type of 'parent_container'.
+ *
+ * Should return the newly created block if there is one, or
+ * 'parent_container' if its type was modified, or NULL.
+ */
+typedef cmark_node * (*OpenBlockFunc) (cmark_syntax_extension *extension,
+                                       bool indented,
+                                       cmark_parser *parser,
+                                       cmark_node *parent_container,
+                                       const char *input);
+
+/** Should return 'true' if 'input' can be contained in 'container',
+ *  'false' otherwise.
+ */
+typedef bool (*MatchBlockFunc)        (cmark_syntax_extension *extension,
+                                       cmark_parser *parser,
+                                       const char *input,
+                                       cmark_node *container);
+
+/** A syntax extension that can be attached to a cmark_parser
+ * with cmark_parser_attach_syntax_extension().
+ *
+ * Extension writers should assign functions matching
+ * the signature of the following 'virtual methods' to
+ * implement new functionality.
+ *
+ * Their calling order and expected behaviour match the procedure outlined
+ * at <http://spec.commonmark.org/0.24/#phase-1-block-structure>:
+ *
+ * During step 1, cmark will call 'last_block_matches' when it
+ * iterates over an open block created by this extension,
+ * to determine  whether it could contain the new line.
+ * If 'last_block_matches' is NULL, cmark will close the block.
+ *
+ * During step 2, if and only if the new line doesn't match any
+ * of the standard syntax rules, cmark will call 'try_opening_block'
+ * to let the extension determine whether that new line matches
+ * one of its syntax rules.
+ * It is the responsibility of the parser to create and add the
+ * new block with cmark_parser_make_block and cmark_parser_add_child.
+ * If 'try_opening_block' is NULL, the extension will have
+ * no effect at all on the final AST.
+ */
+struct cmark_syntax_extension {
+  MatchBlockFunc          last_block_matches;
+  OpenBlockFunc           try_opening_block;
+  char                  * name;
+};
+
+/** Free a cmark_syntax_extension.
+ */
+CMARK_EXPORT
+void cmark_syntax_extension_free               (cmark_syntax_extension *extension);
+
+/** Return a newly-constructed cmark_syntax_extension, named 'name'.
+ */
+CMARK_EXPORT
+cmark_syntax_extension *cmark_syntax_extension_new (const char *name);
 
 /**
  * ## Rendering

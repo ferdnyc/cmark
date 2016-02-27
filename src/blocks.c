@@ -66,6 +66,12 @@ static cmark_node *make_document() {
   return e;
 }
 
+bool cmark_parser_attach_syntax_extension(cmark_parser *parser,
+                                      cmark_syntax_extension *extension) {
+  parser->syntax_extensions = cmark_llist_append(parser->syntax_extensions, extension);
+  return true;
+}
+
 cmark_parser *cmark_parser_new(int options) {
   cmark_parser *parser = (cmark_parser *)malloc(sizeof(cmark_parser));
   cmark_node *document = make_document();
@@ -90,6 +96,7 @@ cmark_parser *cmark_parser_new(int options) {
   parser->linebuf = buf;
   parser->options = options;
   parser->last_buffer_ended_with_cr = false;
+  parser->syntax_extensions = NULL;
 
   return parser;
 }
@@ -100,6 +107,7 @@ void cmark_parser_free(cmark_parser *parser) {
   cmark_strbuf_release(parser->linebuf);
   free(parser->linebuf);
   cmark_reference_map_free(parser->refmap);
+  cmark_llist_free(parser->syntax_extensions);
   free(parser);
 }
 
@@ -764,6 +772,24 @@ static bool parse_html_block_prefix(cmark_parser *parser,
   return res;
 }
 
+static bool parse_extension_block(cmark_parser *parser,
+                                  cmark_node *container,
+                                  cmark_chunk *input)
+{
+  const char *input_cstr;
+  bool res = false;
+
+  if (container->extension->last_block_matches) {
+    input_cstr = cmark_chunk_to_cstr(input);
+
+    if (container->extension->last_block_matches(
+        container->extension, parser, input_cstr, container))
+      res = true;
+  }
+
+  return res;
+}
+
 /**
  * For each containing node, try to parse the associated line start.
  *
@@ -786,6 +812,12 @@ static cmark_node *check_open_blocks(cmark_parser *parser,
     cont_type = container->type;
 
     S_find_first_nonspace(parser, input);
+
+    if (container->extension) {
+      if (!parse_extension_block(parser, container, input))
+        goto done;
+      continue;
+    }
 
     switch (cont_type) {
       case CMARK_NODE_BLOCK_QUOTE:
@@ -984,9 +1016,29 @@ static void open_new_blocks(cmark_parser *parser,
       (*container)->as.code.fence_length = 0;
       (*container)->as.code.fence_offset = 0;
       (*container)->as.code.info = cmark_chunk_literal("");
-
     } else {
-      break;
+      cmark_llist *tmp;
+      cmark_node *new_container = NULL;
+
+      for (tmp = parser->syntax_extensions; tmp; tmp=tmp->next) {
+        cmark_syntax_extension *ext = (cmark_syntax_extension *) tmp->data;
+
+        if (ext->try_opening_block) {
+          const char *input_cstr = cmark_chunk_to_cstr(input);
+
+          new_container = ext->try_opening_block(
+              ext, indented, parser, *container, input_cstr);
+
+          if (new_container) {
+            *container = new_container;
+            break;
+          }
+        }
+      }
+
+      if (!new_container) {
+        break;
+      }
     }
 
     if (accepts_lines((*container)->type)) {
@@ -1136,6 +1188,7 @@ static void S_process_line(cmark_parser *parser, const unsigned char *buffer,
 
   input.data = parser->curline->ptr;
   input.len = parser->curline->size;
+  input.alloc = 0;
 
   parser->line_number++;
 
@@ -1162,6 +1215,11 @@ finished:
   if (parser->last_line_length &&
       input.data[parser->last_line_length - 1] == '\r')
     parser->last_line_length -= 1;
+
+  /* When passing the contents of the chunk to extensions,
+   * the data in it gets allocated.
+   */
+  cmark_chunk_free(&input);
 
   cmark_strbuf_clear(parser->curline);
 }

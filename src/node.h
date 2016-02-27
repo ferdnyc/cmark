@@ -69,6 +69,8 @@ struct cmark_node {
 
   cmark_strbuf string_content;
 
+  cmark_syntax_extension *extension;
+
   union {
     cmark_chunk literal;
     cmark_list list;
