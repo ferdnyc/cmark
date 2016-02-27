@@ -498,20 +498,6 @@ char *cmark_render_latex(cmark_node *root, int options, int width);
  * ## Character buffer interface
  */
 
-extern unsigned char cmark_strbuf__initbuf[];
-
-#define GH_BUF_INIT                                                            \
-  { cmark_strbuf__initbuf, 0, 0 }
-#define BUFSIZE_MAX INT_MAX
-
-/** Initialize a cmark_strbuf structure.
- *
- * For the cases where GH_BUF_INIT cannot be used to do static
- * initialization.
- */
-CMARK_EXPORT
-void cmark_strbuf_init(cmark_strbuf *buf, cmark_bufsize_t initial_size);
-
 /** Grow the buffer to hold at least `target_size` bytes.
  */
 CMARK_EXPORT

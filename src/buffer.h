@@ -20,6 +20,19 @@ struct cmark_strbuf {
   bufsize_t asize, size;
 };
 
+extern unsigned char cmark_strbuf__initbuf[];
+
+#define GH_BUF_INIT                                                            \
+  { cmark_strbuf__initbuf, 0, 0 }
+#define BUFSIZE_MAX INT_MAX
+
+/** Initialize a cmark_strbuf structure.
+ *
+ * For the cases where GH_BUF_INIT cannot be used to do static
+ * initialization.
+ */
+void cmark_strbuf_init(cmark_strbuf *buf, cmark_bufsize_t initial_size);
+
 static CMARK_INLINE const char *cmark_strbuf_cstr(const cmark_strbuf *buf) {
   return (char *)buf->ptr;
 }
