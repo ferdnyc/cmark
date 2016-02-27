@@ -498,6 +498,11 @@ char *cmark_render_latex(cmark_node *root, int options, int width);
  * ## Character buffer interface
  */
 
+/**Create a new buffer with size 'initial size'
+ */
+CMARK_EXPORT
+cmark_strbuf *cmark_strbuf_new(cmark_bufsize_t initial_size);
+
 /** Grow the buffer to hold at least `target_size` bytes.
  */
 CMARK_EXPORT

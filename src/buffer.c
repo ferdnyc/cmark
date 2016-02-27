@@ -19,6 +19,13 @@ unsigned char cmark_strbuf__initbuf[1];
 #define MIN(x, y) ((x < y) ? x : y)
 #endif
 
+cmark_strbuf *cmark_strbuf_new(bufsize_t initial_size) {
+  cmark_strbuf *res = (cmark_strbuf *)malloc(sizeof(cmark_strbuf));
+  cmark_strbuf_init(res, initial_size);
+
+  return res;
+}
+
 void cmark_strbuf_init(cmark_strbuf *buf, bufsize_t initial_size) {
   buf->asize = 0;
   buf->size = 0;
