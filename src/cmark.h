@@ -85,6 +85,9 @@ typedef enum {
 typedef struct cmark_node cmark_node;
 typedef struct cmark_parser cmark_parser;
 typedef struct cmark_iter cmark_iter;
+typedef struct cmark_strbuf cmark_strbuf;
+
+typedef int bufsize_t;
 
 /**
  * ## Creating and Destroying Nodes
@@ -490,6 +493,136 @@ char *cmark_render_commonmark(cmark_node *root, int options, int width);
  */
 CMARK_EXPORT
 char *cmark_render_latex(cmark_node *root, int options, int width);
+
+/**
+ * ## Character buffer interface
+ */
+
+extern unsigned char cmark_strbuf__initbuf[];
+
+#define GH_BUF_INIT                                                            \
+  { cmark_strbuf__initbuf, 0, 0 }
+#define BUFSIZE_MAX INT_MAX
+
+/** Initialize a cmark_strbuf structure.
+ *
+ * For the cases where GH_BUF_INIT cannot be used to do static
+ * initialization.
+ */
+CMARK_EXPORT
+void cmark_strbuf_init(cmark_strbuf *buf, bufsize_t initial_size);
+
+/** Grow the buffer to hold at least `target_size` bytes.
+ */
+CMARK_EXPORT
+void cmark_strbuf_grow(cmark_strbuf *buf, bufsize_t target_size);
+
+/** Free the memory allocated for the buffer.
+ */
+CMARK_EXPORT
+void cmark_strbuf_free(cmark_strbuf *buf);
+
+/** Swap 'buf_a' and 'buf_b'.
+ */
+CMARK_EXPORT
+void cmark_strbuf_swap(cmark_strbuf *buf_a, cmark_strbuf *buf_b);
+
+/** Get the length of 'buf'.
+ */
+CMARK_EXPORT
+bufsize_t cmark_strbuf_len(const cmark_strbuf *buf);
+
+/**Compare 'a' and 'b' contents, return 0 if they are the same.
+ */
+CMARK_EXPORT
+int cmark_strbuf_cmp(const cmark_strbuf *a, const cmark_strbuf *b);
+
+/** Obtain an allocated char array from a statically allocated string buffer.
+ * FIXME not really sure about this description.
+ */
+CMARK_EXPORT
+unsigned char *cmark_strbuf_detach(cmark_strbuf *buf);
+
+/** Copy the contents of 'buf' to a previously allocated 'data' pointer
+ */
+CMARK_EXPORT
+void cmark_strbuf_copy_cstr(char *data, bufsize_t datasize,
+                            const cmark_strbuf *buf);
+
+/** Set the contents of 'buf' to the given 'data'
+ */
+CMARK_EXPORT
+void cmark_strbuf_set(cmark_strbuf *buf, const unsigned char *data,
+                      bufsize_t len);
+
+/** Set the contents of 'buf' to the given NULL-terminated 'string'
+ */
+CMARK_EXPORT
+void cmark_strbuf_sets(cmark_strbuf *buf, const char *string);
+
+/** Append the character 'c' to 'buf'
+ */
+CMARK_EXPORT
+void cmark_strbuf_putc(cmark_strbuf *buf, int c);
+
+/** Append the given 'data' to 'buf'
+ */
+CMARK_EXPORT
+void cmark_strbuf_put(cmark_strbuf *buf, const unsigned char *data,
+                      bufsize_t len);
+
+/** Append the given NULL-terminated 'string' to 'buf'
+ */
+CMARK_EXPORT
+void cmark_strbuf_puts(cmark_strbuf *buf, const char *string);
+
+/** Reset 'buf' to the empty state
+ */
+CMARK_EXPORT
+void cmark_strbuf_clear(cmark_strbuf *buf);
+
+/** Equivalent of the standard
+ * [strchr](http://www.cplusplus.com/reference/cstring/strchr/) function.
+ */
+CMARK_EXPORT
+bufsize_t cmark_strbuf_strchr(const cmark_strbuf *buf, int c, bufsize_t pos);
+
+/** Equivalent of the standard
+ * [strrchr](http://www.cplusplus.com/reference/cstring/strrchr/) function.
+ */
+CMARK_EXPORT
+bufsize_t cmark_strbuf_strrchr(const cmark_strbuf *buf, int c, bufsize_t pos);
+
+/** Drop 'n' characters from the beginning of 'buf'.
+ */
+CMARK_EXPORT
+void cmark_strbuf_drop(cmark_strbuf *buf, bufsize_t n);
+
+/** Drop 'len' characters from the end of 'buf'.
+ */
+CMARK_EXPORT
+void cmark_strbuf_truncate(cmark_strbuf *buf, bufsize_t len);
+
+/** Trim whitespaces at the end of 'buf'
+ */
+CMARK_EXPORT
+void cmark_strbuf_rtrim(cmark_strbuf *buf);
+
+/** Trim whitespaces on both ends of 'buf'
+ */
+CMARK_EXPORT
+void cmark_strbuf_trim(cmark_strbuf *buf);
+
+/** Destructively modify 's', collapsing consecutive
+ * space and newline characters into a single space.
+ */
+CMARK_EXPORT
+void cmark_strbuf_normalize_whitespace(cmark_strbuf *s);
+
+/** Destructively unescape 's': remove backslashes before punctuation chars.
+ */
+CMARK_EXPORT
+void cmark_strbuf_unescape(cmark_strbuf *s);
 
 /**
  * ## Options

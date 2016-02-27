@@ -1,4 +1,4 @@
-.TH cmark 3 "February 02, 2016" "LOCAL" "Library Functions Manual"
+.TH cmark 3 "February 27, 2016" "LOCAL" "Library Functions Manual"
 .SH
 NAME
 .PP
@@ -14,7 +14,7 @@ Simple Interface
 
 .PP
 Convert \f[I]text\f[] (assumed to be a UTF\-8 encoded string with length
-\f[I]len\f[] from CommonMark Markdown to HTML, returning a
+\f[I]len\f[]) from CommonMark Markdown to HTML, returning a
 null\-terminated, UTF\-8\-encoded string.
 
 .SS
@@ -102,8 +102,8 @@ Creating and Destroying Nodes
 
 .PP
 Creates a new node of type \f[I]type\f[]. Note that the node may have
-other required properties, which it is the caller\[cq]s responsibility
-to assign.
+other required properties, which it is the caller's responsibility to
+assign.
 
 .PP
 \fIvoid\f[] \fBcmark_node_free\f[](\fIcmark_node *node\f[])
@@ -376,8 +376,7 @@ Returns 1 if \f[I]node\f[] is a tight list, 0 otherwise.
 \fIint\f[] \fBcmark_node_set_list_tight\f[](\fIcmark_node *node\f[], \fIint tight\f[])
 
 .PP
-Sets the \[lq]tightness\[rq] of a list. Returns 1 on success, 0 on
-failure.
+Sets the "tightness" of a list. Returns 1 on success, 0 on failure.
 
 .PP
 \fIconst char *\f[] \fBcmark_node_get_fence_info\f[](\fIcmark_node *node\f[])
@@ -424,31 +423,31 @@ on failure.
 \fIconst char *\f[] \fBcmark_node_get_on_enter\f[](\fIcmark_node *node\f[])
 
 .PP
-Returns the literal \[lq]on enter\[rq] text for a custom \f[I]node\f[],
-or an empty string if no on_enter is set.
+Returns the literal "on enter" text for a custom \f[I]node\f[], or an
+empty string if no on_enter is set.
 
 .PP
 \fIint\f[] \fBcmark_node_set_on_enter\f[](\fIcmark_node *node\f[], \fIconst char *on_enter\f[])
 
 .PP
-Sets the literal text to render \[lq]on enter\[rq] for a custom
-\f[I]node\f[]. Any children of the node will be rendered after this
-text. Returns 1 on success 0 on failure.
+Sets the literal text to render "on enter" for a custom \f[I]node\f[].
+Any children of the node will be rendered after this text. Returns 1 on
+success 0 on failure.
 
 .PP
 \fIconst char *\f[] \fBcmark_node_get_on_exit\f[](\fIcmark_node *node\f[])
 
 .PP
-Returns the literal \[lq]on exit\[rq] text for a custom \f[I]node\f[],
-or an empty string if no on_exit is set.
+Returns the literal "on exit" text for a custom \f[I]node\f[], or an
+empty string if no on_exit is set.
 
 .PP
 \fIint\f[] \fBcmark_node_set_on_exit\f[](\fIcmark_node *node\f[], \fIconst char *on_exit\f[])
 
 .PP
-Sets the literal text to render \[lq]on exit\[rq] for a custom
-\f[I]node\f[]. Any children of the node will be rendered before this
-text. Returns 1 on success 0 on failure.
+Sets the literal text to render "on exit" for a custom \f[I]node\f[].
+Any children of the node will be rendered before this text. Returns 1 on
+success 0 on failure.
 
 .PP
 \fIint\f[] \fBcmark_node_get_start_line\f[](\fIcmark_node *node\f[])
@@ -628,6 +627,158 @@ Render a \f[I]node\f[] tree as a commonmark document.
 Render a \f[I]node\f[] tree as a LaTeX document.
 
 .SS
+Character buffer interface
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_init\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t initial_size\f[])
+
+.PP
+Initialize a cmark_strbuf structure.
+.PP
+For the cases where GH_BUF_INIT cannot be used to do static
+initialization.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_grow\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t target_size\f[])
+
+.PP
+Grow the buffer to hold at least \f[C]target_size\f[] bytes.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_free\f[](\fIcmark_strbuf *buf\f[])
+
+.PP
+Free the memory allocated for the buffer.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_swap\f[](\fIcmark_strbuf *buf_a\f[], \fIcmark_strbuf *buf_b\f[])
+
+.PP
+Swap \f[I]buf_a\f[] and \f[I]buf_b\f[].
+
+.PP
+\fIbufsize_t\f[] \fBcmark_strbuf_len\f[](\fIconst cmark_strbuf *buf\f[])
+
+.PP
+Get the length of \f[I]buf\f[].
+
+.PP
+\fIint\f[] \fBcmark_strbuf_cmp\f[](\fIconst cmark_strbuf *a\f[], \fIconst cmark_strbuf *b\f[])
+
+.PP
+Compare \f[I]a\f[] and \f[I]b\f[] contents, return 0 if they are the
+same.
+
+.PP
+.nf
+\fC
+.RS 0n
+unsigned char *cmark_strbuf_detach(cmark_strbuf *buf);
+.RE
+\f[]
+.fi
+
+.PP
+Obtain an allocated char array from a statically allocated string
+buffer. FIXME not really sure about this description.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_copy_cstr\f[](\fIchar *data\f[], \fIbufsize_t datasize\f[], \fIconst cmark_strbuf *buf\f[])
+
+.PP
+Copy the contents of \f[I]buf\f[] to a previously allocated
+\f[I]data\f[] pointer
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_set\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIbufsize_t len\f[])
+
+.PP
+Set the contents of \f[I]buf\f[] to the given \f[I]data\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_sets\f[](\fIcmark_strbuf *buf\f[], \fIconst char *string\f[])
+
+.PP
+Set the contents of \f[I]buf\f[] to the given NULL\-terminated
+\f[I]string\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_putc\f[](\fIcmark_strbuf *buf\f[], \fIint c\f[])
+
+.PP
+Append the character \f[I]c\f[] to \f[I]buf\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_put\f[](\fIcmark_strbuf *buf\f[], \fIconst unsigned char *data\f[], \fIbufsize_t len\f[])
+
+.PP
+Append the given \f[I]data\f[] to \f[I]buf\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_puts\f[](\fIcmark_strbuf *buf\f[], \fIconst char *string\f[])
+
+.PP
+Append the given NULL\-terminated \f[I]string\f[] to \f[I]buf\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_clear\f[](\fIcmark_strbuf *buf\f[])
+
+.PP
+Reset \f[I]buf\f[] to the empty state
+
+.PP
+\fIbufsize_t\f[] \fBcmark_strbuf_strchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIbufsize_t pos\f[])
+
+.PP
+Equivalent of the standard
+strchr (http://www.cplusplus.com/reference/cstring/strchr/) function.
+
+.PP
+\fIbufsize_t\f[] \fBcmark_strbuf_strrchr\f[](\fIconst cmark_strbuf *buf\f[], \fIint c\f[], \fIbufsize_t pos\f[])
+
+.PP
+Equivalent of the standard
+strrchr (http://www.cplusplus.com/reference/cstring/strrchr/) function.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_drop\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t n\f[])
+
+.PP
+Drop \f[I]n\f[] characters from the beginning of \f[I]buf\f[].
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_truncate\f[](\fIcmark_strbuf *buf\f[], \fIbufsize_t len\f[])
+
+.PP
+Drop \f[I]len\f[] characters from the end of \f[I]buf\f[].
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_rtrim\f[](\fIcmark_strbuf *buf\f[])
+
+.PP
+Trim whitespaces at the end of \f[I]buf\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_trim\f[](\fIcmark_strbuf *buf\f[])
+
+.PP
+Trim whitespaces on both ends of \f[I]buf\f[]
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_normalize_whitespace\f[](\fIcmark_strbuf *s\f[])
+
+.PP
+Destructively modify \f[I]s\f[], collapsing consecutive space and
+newline characters into a single space.
+
+.PP
+\fIvoid\f[] \fBcmark_strbuf_unescape\f[](\fIcmark_strbuf *s\f[])
+
+.PP
+Destructively unescape \f[I]s\f[]: remove backslashes before punctuation
+chars.
+
+.SS
 Options
 
 .PP
@@ -723,7 +874,7 @@ with the replacement character U+FFFD.
 .fi
 
 .PP
-Convert straight quotes to curly, \[em] to em dashes, \[en] to en
+Convert straight quotes to curly, \-\-\- to em dashes, \-\- to en
 dashes.
 
 .SS
