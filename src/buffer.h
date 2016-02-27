@@ -51,6 +51,8 @@ static CMARK_INLINE bufsize_t cmark_strbuf_safe_strlen(const char *str) {
   return cmark_strbuf_check_bufsize(strlen(str));
 }
 
+void cmark_strbuf_release(cmark_strbuf *buf);
+
 #define cmark_strbuf_at(buf, n) ((buf)->ptr[n])
 
 #ifdef __cplusplus

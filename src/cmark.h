@@ -508,7 +508,7 @@ cmark_strbuf *cmark_strbuf_new(cmark_bufsize_t initial_size);
 CMARK_EXPORT
 void cmark_strbuf_grow(cmark_strbuf *buf, cmark_bufsize_t target_size);
 
-/** Free the memory allocated for the buffer.
+/** Free 'buf'.
  */
 CMARK_EXPORT
 void cmark_strbuf_free(cmark_strbuf *buf);

@@ -101,7 +101,7 @@ void cmark_strbuf_grow(cmark_strbuf *buf, bufsize_t target_size) {
 
 bufsize_t cmark_strbuf_len(const cmark_strbuf *buf) { return buf->size; }
 
-void cmark_strbuf_free(cmark_strbuf *buf) {
+void cmark_strbuf_release(cmark_strbuf *buf) {
   if (!buf)
     return;
 
@@ -109,6 +109,11 @@ void cmark_strbuf_free(cmark_strbuf *buf) {
     free(buf->ptr);
 
   cmark_strbuf_init(buf, 0);
+}
+
+void cmark_strbuf_free(cmark_strbuf *buf) {
+  cmark_strbuf_release(buf);
+  free(buf);
 }
 
 void cmark_strbuf_clear(cmark_strbuf *buf) {
