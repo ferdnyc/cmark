@@ -528,12 +528,6 @@ cmark_bufsize_t cmark_strbuf_size(const cmark_strbuf *buf);
 CMARK_EXPORT
 int cmark_strbuf_cmp(const cmark_strbuf *a, const cmark_strbuf *b);
 
-/** Obtain an allocated char array from a statically allocated string buffer.
- * FIXME not really sure about this description.
- */
-CMARK_EXPORT
-unsigned char *cmark_strbuf_detach(cmark_strbuf *buf);
-
 /** Copy the contents of 'buf' to a previously allocated 'data' pointer
  */
 CMARK_EXPORT
