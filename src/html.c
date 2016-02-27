@@ -310,6 +310,14 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     }
     break;
 
+  case CMARK_NODE_EXTENSION_BLOCK:
+    if (!node->as.extension_block.block_parser->render_block ||
+        !node->as.extension_block.block_parser->render_block(
+          node->as.extension_block.block_parser, html, node, entering, "html")) {
+      /* FIXME: fallback, along the lines of skipping sub nodes and rendering
+       * the string contents of the node as a paragraph maybe? */
+    }
+    break;
   default:
     assert(false);
     break;

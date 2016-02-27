@@ -53,6 +53,11 @@ static bool S_can_contain(cmark_node *node, cmark_node *child) {
   case CMARK_NODE_CUSTOM_BLOCK:
     return true;
 
+  case CMARK_NODE_EXTENSION_BLOCK:
+    return (node->as.extension_block.block_parser->block_can_contain &&
+      node->as.extension_block.block_parser->block_can_contain(
+        node->as.extension_block.block_parser, node, child));
+
   case CMARK_NODE_PARAGRAPH:
   case CMARK_NODE_HEADING:
   case CMARK_NODE_EMPH:
@@ -123,6 +128,8 @@ static void S_free_nodes(cmark_node *e) {
       cmark_chunk_free(&e->as.custom.on_enter);
       cmark_chunk_free(&e->as.custom.on_exit);
       break;
+    case CMARK_NODE_EXTENSION_BLOCK:
+      cmark_chunk_free(&e->as.extension_block.pretty_name);
     default:
       break;
     }
@@ -178,6 +185,8 @@ const char *cmark_node_get_type_string(cmark_node *node) {
     return "html_block";
   case CMARK_NODE_CUSTOM_BLOCK:
     return "custom_block";
+  case CMARK_NODE_EXTENSION_BLOCK:
+    return cmark_chunk_to_cstr(&node->as.extension_block.pretty_name);
   case CMARK_NODE_PARAGRAPH:
     return "paragraph";
   case CMARK_NODE_HEADING:
@@ -625,6 +634,68 @@ int cmark_node_set_on_exit(cmark_node *node, const char *on_exit) {
   }
 
   return 0;
+}
+
+const char *cmark_node_get_pretty_name(cmark_node *node) {
+  if (node == NULL) {
+    return NULL;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_EXTENSION_BLOCK:
+    return cmark_chunk_to_cstr(&node->as.extension_block.pretty_name);
+  default:
+    break;
+  }
+
+  return NULL;
+}
+
+bool cmark_node_set_pretty_name(cmark_node *node, const char *pretty_name) {
+  if (node == NULL) {
+    return false;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_EXTENSION_BLOCK:
+    cmark_chunk_set_cstr(&node->as.extension_block.pretty_name, pretty_name);
+    return true;
+  default:
+    break;
+  }
+
+  return false;
+}
+
+cmark_block_parser *cmark_node_get_block_parser(cmark_node *node) {
+  if (node == NULL) {
+    return NULL;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_EXTENSION_BLOCK:
+    return node->as.extension_block.block_parser;
+  default:
+    break;
+  }
+
+  return NULL;
+}
+
+bool cmark_node_set_block_parser(cmark_node *node, cmark_block_parser *block_parser) {
+  if (node == NULL) {
+    return false;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_EXTENSION_BLOCK:
+    node->as.extension_block.block_parser = block_parser;
+    return true;
+  default:
+    break;
+  }
+
+  return false;
 }
 
 int cmark_node_get_start_line(cmark_node *node) {

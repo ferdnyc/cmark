@@ -42,6 +42,7 @@ struct cmark_parser {
   cmark_strbuf *linebuf;
   /* Options set by the user, see the Options section in cmark.h */
   int options;
+  cmark_llist *block_parsers;
 };
 
 #ifdef __cplusplus

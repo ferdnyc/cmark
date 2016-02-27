@@ -16,6 +16,8 @@ set(HEADERS
   cmark_ctype.h
   render.h
   hash.h
+  registry.h
+  plugin.h
   )
 set(LIBRARY_SOURCES
   cmark.c
@@ -40,6 +42,9 @@ set(LIBRARY_SOURCES
   cmark_ctype.c
   hash.c
   linked_list.c
+  block_parser.c
+  registry.c
+  plugin.c
   ${HEADERS}
   )
 
@@ -84,6 +89,8 @@ set(CMAKE_LINKER_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE} -pg")
 set(CMAKE_LINKER_PROFILE "${CMAKE_LINKER_FLAGS_RELEASE} -pg")
 
+add_definitions(-DLIBDIR=\"${CMAKE_BINARY_DIR}\")
+
 if (${CMAKE_MAJOR_VERSION} GREATER 1 AND ${CMAKE_MINOR_VERSION} GREATER 8)
   set(CMAKE_C_VISIBILITY_PRESET hidden)
   set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
@@ -111,6 +118,8 @@ else()
     OUTPUT_NAME "cmark"
     VERSION ${PROJECT_VERSION})
 endif(MSVC)
+
+target_link_libraries(cmark ${CMAKE_DL_LIBS})
 
 set_property(TARGET ${LIBRARY}
   APPEND PROPERTY MACOSX_RPATH true)

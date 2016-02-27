@@ -42,6 +42,7 @@ typedef enum {
   CMARK_NODE_CODE_BLOCK,
   CMARK_NODE_HTML_BLOCK,
   CMARK_NODE_CUSTOM_BLOCK,
+  CMARK_NODE_EXTENSION_BLOCK,
   CMARK_NODE_PARAGRAPH,
   CMARK_NODE_HEADING,
   CMARK_NODE_THEMATIC_BREAK,
@@ -87,6 +88,8 @@ typedef struct cmark_node cmark_node;
 typedef struct cmark_parser cmark_parser;
 typedef struct cmark_iter cmark_iter;
 typedef struct cmark_strbuf cmark_strbuf;
+typedef struct cmark_plugin cmark_plugin;
+typedef struct cmark_block_parser cmark_block_parser;
 
 typedef int cmark_bufsize_t;
 
@@ -131,6 +134,22 @@ void          cmark_llist_free_full (cmark_llist       * head,
  */
 CMARK_EXPORT
 void          cmark_llist_free      (cmark_llist       * head);
+
+/**
+ * ## Initialization
+ */
+
+/** Initialize the cmark library. This will discover available block parsers.
+ *  Returns 'true' if initialization was successful, 'false' otherwise.
+ */
+CMARK_EXPORT
+bool cmark_init(void);
+
+/** Deinitialize the cmark library. This will release all discovered block parsers.
+ *  Returns true if deinitialization was successful, 'false' otherwise.
+ */
+CMARK_EXPORT
+bool cmark_deinit(void);
 
 /**
  * ## Creating and Destroying Nodes
@@ -420,6 +439,25 @@ CMARK_EXPORT const char *cmark_node_get_on_exit(cmark_node *node);
  */
 CMARK_EXPORT int cmark_node_set_on_exit(cmark_node *node, const char *on_exit);
 
+/** Get the pretty name for an extension 'node'.
+ *  Do not free.
+ */
+CMARK_EXPORT const char *cmark_node_get_pretty_name(cmark_node *node);
+
+/** Set the pretty name for an extension 'node'.
+ *  This takes a copy of 'name'.
+ */
+CMARK_EXPORT bool cmark_node_set_pretty_name(cmark_node *node, const char *name);
+
+/** Get the block parser that created an extension 'node'.
+ */
+CMARK_EXPORT cmark_block_parser *cmark_node_get_block_parser(cmark_node *node);
+
+/** Set the block parser that created an extension 'node'.
+ */
+CMARK_EXPORT bool cmark_node_set_block_parser(cmark_node *node,
+                                              cmark_block_parser *block_parser);
+
 /** Returns the line on which 'node' begins.
  */
 CMARK_EXPORT int cmark_node_get_start_line(cmark_node *node);
@@ -515,6 +553,18 @@ void cmark_parser_feed(cmark_parser *parser, const char *buffer, size_t len);
  */
 CMARK_EXPORT
 cmark_node *cmark_parser_finish(cmark_parser *parser);
+
+/**
+ * @parser: The parser to register the block_parser with
+ * @block_parser: The block_parser to register
+ *
+ * See the documentation for #cmark_block_parser for more information.
+ *
+ * Returns: %true if the block_parser was successfully registered,
+ *  %false otherwise.
+ */
+CMARK_EXPORT
+bool cmark_parser_attach_block_parser(cmark_parser *parser, cmark_block_parser *block_parser);
 
 /** Parse a CommonMark document in 'buffer' of length 'len'.
  * Returns a pointer to a tree of nodes.
@@ -691,6 +741,220 @@ void cmark_parser_advance_offset(cmark_parser *parser,
                                  const char *input,
                                  int count,
                                  bool columns);
+
+/**
+ * ## Extension Support
+ *
+ * While the "core" of libcmark is strictly compliant with the
+ * specification, an API is provided for extension writers to
+ * hook into the parsing process.
+ *
+ * It should be noted that the cmark_node API already offers
+ * room for customization, with methods offered to modify it,
+ * and even define "custom" blocks. When the desired customization
+ * is achievable in an error-proof way using that API, it should
+ * be the preferred method.
+ *
+ * The following API requires a more in-depth understanding
+ * of libcmark's parsing strategy, which is exposed
+ * [here](http://spec.commonmark.org/0.24/#appendix-a-parsing-strategy).
+ *
+ * It should be used when "a posteriori" modification of the AST
+ * proves to be too difficult / impossible to implement correctly.
+ *
+ * It can also serve as an intermediary step before extending
+ * the specification, as an extension implemented using this API
+ * will be trivially integrated in the core if it proves to be
+ * desirable.
+ */
+
+/**
+ * ### Plugin API.
+ *
+ * Extensions should be distributed as dynamic libraries,
+ * with a single exported function named after the distributed
+ * filename.
+ *
+ * When discovering extensions (see cmark_init), cmark will
+ * try to load a symbol named "init_{{filename}}" in all the
+ * dynamic libraries it encounters.
+ *
+ * For example, given a dynamic library named myextension.so
+ * (or myextension.dll), cmark will try to load the symbol
+ * named "init_myextension". This means that the filename
+ * must lend itself to forming a valid C identifier, with
+ * the notable exception of dashes, which will be translated
+ * to underscores, which means cmark will look for a function
+ * named "init_my_extension" if it encounters a dynamic library
+ * named "my-extension.so".
+ *
+ * See the 'PluginInitFunc' typedef for the exact prototype
+ * this function should follow.
+ *
+ * For now the extensibility of cmark is not complete, as
+ * it only offers API to hook into the block parsing phase
+ * (<http://spec.commonmark.org/0.24/#phase-1-block-structure>).
+ *
+ * See 'cmark_plugin_register_block_parser' for more information.
+ */
+
+/** The prototype plugins' init function should follow.
+ */
+typedef bool (*PluginInitFunc)(cmark_plugin *plugin);
+
+/** Register 'block_parser' with the 'plugin', it will be made
+ * available as an extension and, if attached to a cmark_parser
+ * with 'cmark_parser_attach_block_parser', it will contribute
+ * to the block parsing process.
+ *
+ * See the documentation for 'cmark_block_parser' for information
+ * on how to implement one.
+ *
+ * This function will typically be called from the init function
+ * of external modules.
+ *
+ * This takes ownership of 'block_parser', one should not call
+ * 'cmark_block_parser_free' after registering it with a plugin.
+ */
+CMARK_EXPORT
+bool cmark_plugin_register_block_parser(cmark_plugin *plugin,
+                                        cmark_block_parser *block_parser);
+
+/** Lookup a block parser.
+ *  This will search for the block parser named 'name' among the
+ *  registered block parsers.
+ *
+ *  The block parser can then be attached to a cmark_parser
+ *  with the cmark_parser_attach_block_parser method.
+ */
+CMARK_EXPORT
+cmark_block_parser *cmark_find_block_parser(const char *name);
+
+/**
+ * ### Implementing a block parser.
+ */
+
+/** Should return 'true' if 'node' can contain 'child', 'false' otherwise
+ */
+typedef bool (*CanContainFunc)        (cmark_block_parser *block_parser,
+                                       cmark_node *node,
+                                       cmark_node *child);
+
+/** Should return 'true' if 'node' can contain inline nodes, 'false' otherwise.
+ */
+typedef bool (*CanContainInlinesFunc) (cmark_block_parser *block_parser,
+                                       cmark_node *node);
+
+/** Should create and add a new open block to 'parent_container' if
+ * 'input' matches the syntax rule for that block type. It is allowed
+ * to modify the type of 'parent_container'.
+ *
+ * Should return the newly created block if there is one, or
+ * 'parent_container' if its type was modified, or NULL.
+ */
+typedef cmark_node * (*OpenBlockFunc) (cmark_block_parser *block_parser,
+                                       bool indented,
+                                       cmark_parser *parser,
+                                       cmark_node *parent_container,
+                                       const char *input);
+
+/** Should return 'true' if 'input' can be contained in 'container',
+ *  'false' otherwise.
+ */
+typedef bool (*MatchBlockFunc)        (cmark_block_parser *block_parser,
+                                       cmark_parser *parser,
+                                       const char *input,
+                                       cmark_node *container);
+
+/** Called when entering or leaving a node, as specified by 'entering',
+ * should render 'node' by appending content to 'buf'.
+ *
+ * Should return 'true' if 'node' could be rendered to the given 'format',
+ * 'false' otherwise.
+ */
+typedef bool (*RenderBlockFunc)       (cmark_block_parser *block_parser,
+                                       cmark_strbuf *buf,
+                                       cmark_node *node,
+                                       bool entering,
+                                       const char *format);
+
+/** A block parser that can be attached to a cmark_parser
+ * with cmark_parser_attach_block_parser().
+ *
+ * Extension writers should assign functions matching
+ * the signature of the following 'virtual methods' to
+ * implement new functionality.
+ *
+ * Their calling order and expected behaviour match the procedure outlined
+ * at <http://spec.commonmark.org/0.24/#phase-1-block-structure>:
+ *
+ * During step 1, cmark will call 'last_block_matches' when it
+ * iterates over an open block implemented by this block parser,
+ * to determine  whether it could contain the new line.
+ * If 'last_block_matches' is NULL, cmark will close the block.
+ *
+ * During step 2, if and only if the new line doesn't match any
+ * of the standard block types, cmark will call 'try_opening_block'
+ * to let the block parser determine whether that new line matches
+ * one of the block types it implements.
+ * It is the responsibility of the parser to create and add the
+ * new block with cmark_parser_make_block and cmark_parser_add_child.
+ * If 'try_opening_block' is NULL, the block parser will have
+ * no effect at all on the final AST.
+ *
+ * Still during step 2, when add_child is called it will call
+ * 'block_can_contain' if the block parser implemented one or
+ * several of its ancestors, starting from the immediate parent
+ * up to the root of the tree. If it returns 'false', the
+ * ancestor is closed, and cmark tries adding it to the parent of
+ * the closed ancestor, until a valid ancestor is found.
+ * If 'block_can_contain' is NULL, it is considered that blocks
+ * implemented by an extension cannot contain each other.
+ *
+ * FIXME step 3 -> find a good test case to implement it.
+ *
+ * While inline parsing isn't yet extensible, cmark will however call
+ * 'block_can_contain_inlines' during the second phase outlined at
+ * <http://spec.commonmark.org/0.24/#phase-2-inline-structure>.
+ * This function should simply return true if it can contain one
+ * or more inline node types, false if it can't contain any.
+ * 'block_can_contain' will be called with individual inline nodes
+ * afterwards if 'block_can_contain_inlines' returned true, to give
+ * full control to the block parser over the types of inline
+ * nodes containable by the block types it implements.
+ * If 'render_block' is NULL, it is considered that the blocks
+ * defined by the block parser cannot contain any inlines.
+ *
+ * No other virtual method is called at parsing time, however
+ * at render time, when the renderer iterates over a block defined
+ * by the block parser, it will call the 'render_block' method
+ * to let the block parser render the block. It is expected
+ * that the block parser will either render the block by appending
+ * characters to the cmark_strbuf passed as parameter, or return
+ * false if it cannot handle the desired format, in which case
+ * the renderer will fallback to rendering the literal string
+ * content of the block as it sees fit.
+ * If 'render_block' is NULL, all the renderers will follow
+ * the fallback code path.
+ */
+struct cmark_block_parser {
+  MatchBlockFunc          last_block_matches;
+  OpenBlockFunc           try_opening_block;
+  CanContainFunc          block_can_contain;
+  CanContainInlinesFunc   block_can_contain_inlines;
+  RenderBlockFunc         render_block;
+  char                  * name;
+};
+
+/** Free a cmark_block_parser.
+ */
+CMARK_EXPORT
+void cmark_block_parser_free               (cmark_block_parser *block_parser);
+
+/** Return a newly-constructed cmark_block_parser, named 'name'.
+ */
+CMARK_EXPORT
+cmark_block_parser *cmark_block_parser_new (const char *name);
 
 /**
  * ## Rendering
@@ -930,6 +1194,7 @@ const char *cmark_version_string();
 #define NODE_CODE_BLOCK CMARK_NODE_CODE_BLOCK
 #define NODE_HTML_BLOCK CMARK_NODE_HTML_BLOCK
 #define NODE_CUSTOM_BLOCK CMARK_NODE_CUSTOM_BLOCK
+#define NODE_EXTENSION_BLOCK CMARK_NODE_EXTENSION_BLOCK
 #define NODE_PARAGRAPH CMARK_NODE_PARAGRAPH
 #define NODE_HEADING CMARK_NODE_HEADING
 #define NODE_HEADER CMARK_NODE_HEADER

@@ -47,6 +47,11 @@ typedef struct {
   cmark_chunk on_exit;
 } cmark_custom;
 
+typedef struct {
+  cmark_block_parser *block_parser;
+  cmark_chunk pretty_name;
+} cmark_extension_block;
+
 struct cmark_node {
   struct cmark_node *next;
   struct cmark_node *prev;
@@ -76,6 +81,7 @@ struct cmark_node {
     cmark_heading heading;
     cmark_link link;
     cmark_custom custom;
+    cmark_extension_block extension_block;
     int html_block_type;
   } as;
 };
