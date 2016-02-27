@@ -518,10 +518,10 @@ void cmark_strbuf_free(cmark_strbuf *buf);
 CMARK_EXPORT
 void cmark_strbuf_swap(cmark_strbuf *buf_a, cmark_strbuf *buf_b);
 
-/** Get the length of 'buf'.
+/** Get the size in bytes of 'buf'.
  */
 CMARK_EXPORT
-cmark_bufsize_t cmark_strbuf_len(const cmark_strbuf *buf);
+cmark_bufsize_t cmark_strbuf_size(const cmark_strbuf *buf);
 
 /**Compare 'a' and 'b' contents, return 0 if they are the same.
  */

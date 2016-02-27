@@ -99,7 +99,7 @@ void cmark_strbuf_grow(cmark_strbuf *buf, bufsize_t target_size) {
   buf->ptr = new_ptr;
 }
 
-bufsize_t cmark_strbuf_len(const cmark_strbuf *buf) { return buf->size; }
+bufsize_t cmark_strbuf_size(const cmark_strbuf *buf) { return buf->size; }
 
 void cmark_strbuf_release(cmark_strbuf *buf) {
   if (!buf)
