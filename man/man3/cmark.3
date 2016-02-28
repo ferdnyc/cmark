@@ -592,6 +592,155 @@ Returns a pointer to a tree of nodes.
 Parse a CommonMark document in file \f[I]f\f[], returning a pointer to a
 tree of nodes.
 
+.PP
+\fIint\f[] \fBcmark_parser_get_line_number\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the index of the line currently being parsed, starting with 1.
+
+.PP
+\fIcmark_bufsize_t\f[] \fBcmark_parser_get_offset\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the offset in bytes in the line being processed.
+.PP
+Example:
+.SS
+foo
+.PP
+Here, offset will first be 0, then 5 (the index of the \f[I]f\f[]
+character).
+
+.PP
+\fIcmark_bufsize_t\f[] \fBcmark_parser_get_column\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the offset in \f[I]columns\f[] in the line being processed.
+.PP
+This value may differ from the value returned by
+cmark_parser_get_offset() in that it accounts for tabs, and as such
+should not be used as an index in the current line's buffer.
+.PP
+Example:
+.PP
+cmark_parser_advance_offset() can be called to advance the offset by a
+number of columns, instead of a number of bytes.
+.PP
+In that case, if offset falls "in the middle" of a tab character,
+\f[I]column\f[] and offset will differ.
+.IP
+.nf
+\f[C]
+foo                 \et bar
+^                   ^^
+offset (0)          20
+\f[]
+.fi
+.PP
+If cmark_parser_advance_offset is called here with \f[I]columns\f[] set
+to \f[I]true\f[] and \f[I]offset\f[] set to 22,
+cmark_parser_get_offset() will return 20, whereas
+cmark_parser_get_column() will return
+.IP "22." 4
+.PP
+Additionally, as tabs expand to the next multiple of 4 column,
+cmark_parser_has_partially_consumed_tab() will now return \f[I]true\f[].
+
+.PP
+\fIcmark_bufsize_t\f[] \fBcmark_parser_get_first_nonspace\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the absolute index in bytes of the first nonspace character
+coming after the offset as returned by cmark_parser_get_offset() in the
+line currently being processed.
+.PP
+Example:
+.IP
+.nf
+\f[C]
+  foo        bar            baz  \en
+^               ^           ^
+0            offset (16) first_nonspace (28)
+\f[]
+.fi
+
+.PP
+\fIcmark_bufsize_t\f[] \fBcmark_parser_get_first_nonspace_column\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the absolute index of the first nonspace column coming after
+\f[I]offset\f[] in the line currently being processed, counting tabs as
+multiple columns as appropriate.
+.PP
+See the documentation for cmark_parser_get_first_nonspace() and
+cmark_parser_get_column() for more information.
+
+.PP
+\fIint\f[] \fBcmark_parser_get_indent\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the difference between the values returned by
+cmark_parser_get_first_nonspace_column() and cmark_parser_get_column().
+.PP
+This is not a byte offset, as it can count one tab as multiple
+characters.
+
+.PP
+\fIbool\f[] \fBcmark_parser_is_blank\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return \f[I]true\f[] if the line currently being processed has been
+entirely consumed, \f[I]false\f[] otherwise.
+.PP
+Example:
+.IP
+.nf
+\f[C]
+  foo        bar            baz  \en
+^
+offset
+\f[]
+.fi
+.PP
+This function will return \f[I]false\f[] here.
+.IP
+.nf
+\f[C]
+  foo        bar            baz  \en
+                ^
+             offset
+\f[]
+.fi
+.PP
+This function will still return \f[I]false\f[].
+.IP
+.nf
+\f[C]
+  foo        bar            baz  \en
+                               ^
+                            offset
+\f[]
+.fi
+.PP
+At this point, this function will now return \f[I]true\f[].
+
+.PP
+\fIbool\f[] \fBcmark_parser_has_partially_consumed_tab\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return \f[I]true\f[] if the value returned by cmark_parser_get_offset()
+is \f[I]inside\f[] an expanded tab.
+.PP
+See the documentation for cmark_parser_get_column() for more
+information.
+
+.PP
+\fIcmark_bufsize_t\f[] \fBcmark_parser_get_last_line_length\f[](\fIcmark_parser *parser\f[])
+
+.PP
+Return the length in bytes of the previously processed line, excluding
+potential newline (\en) and carriage return (\er) trailing characters.
+
 .SS
 Rendering
 
