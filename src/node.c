@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
 #include "node.h"
 
 static void S_node_unlink(cmark_node *node);

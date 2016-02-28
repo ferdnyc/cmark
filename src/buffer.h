@@ -7,7 +7,6 @@
 #include <limits.h>
 
 #include "cmark.h"
-#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
