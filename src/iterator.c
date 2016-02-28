@@ -116,6 +116,6 @@ void cmark_consolidate_text_nodes(cmark_node *root) {
     }
   }
 
-  cmark_strbuf_free(&buf);
+  cmark_strbuf_release(&buf);
   cmark_iter_free(iter);
 }
