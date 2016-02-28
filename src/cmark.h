@@ -268,6 +268,16 @@ CMARK_EXPORT const char *cmark_node_get_literal(cmark_node *node);
  */
 CMARK_EXPORT int cmark_node_set_literal(cmark_node *node, const char *content);
 
+/** Return the string content for all types of 'node'.
+ *  The pointer stays valid as long as 'node' isn't freed.
+ */
+CMARK_EXPORT const char *cmark_node_get_string_content(cmark_node *node);
+
+/** Set the string 'content' for all types of 'node'.
+ *  Copies 'content'.
+ */
+CMARK_EXPORT bool cmark_node_set_string_content(cmark_node *node, const char *content);
+
 /** Returns the heading level of 'node', or 0 if 'node' is not a heading.
  */
 CMARK_EXPORT int cmark_node_get_heading_level(cmark_node *node);
