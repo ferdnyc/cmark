@@ -26,6 +26,8 @@ static CMARK_INLINE void cr(cmark_strbuf *html) {
 struct render_state {
   cmark_strbuf *html;
   cmark_node *plain;
+  bool need_closing_table_body;
+  bool in_table_header;
 };
 
 static void S_render_sourcepos(cmark_node *node, cmark_strbuf *html,
@@ -216,6 +218,65 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     }
     break;
 
+  case CMARK_NODE_TABLE:
+    if (entering) {
+      cr(html);
+      cmark_strbuf_puts(html, "<table");
+      S_render_sourcepos(node, html, options);
+      cmark_strbuf_putc(html, '>');
+      state->need_closing_table_body = false;
+    } else {
+      if (state->need_closing_table_body)
+        cmark_strbuf_puts(html, "</tbody>");
+      state->need_closing_table_body = false;
+      cmark_strbuf_puts(html, "</table>");
+    }
+    break;
+
+  case CMARK_NODE_TABLE_ROW:
+   if (entering) {
+     cr(html);
+     if (node->as.table_row.is_header) {
+       state->in_table_header = true;
+       cmark_strbuf_puts(html, "<thead>");
+       cr(html);
+     }
+     cmark_strbuf_puts(html, "<tr");
+     S_render_sourcepos(node, html, options);
+     cmark_strbuf_putc(html, '>');
+   } else {
+     cr(html);
+     cmark_strbuf_puts(html, "</tr>");
+     if (node->as.table_row.is_header) {
+       cr(html);
+       cmark_strbuf_puts(html, "</thead>");
+       cr(html);
+       cmark_strbuf_puts(html, "<tbody>");
+       state->need_closing_table_body = true;
+       state->in_table_header = false;
+     }
+   }
+   break;
+
+  case CMARK_NODE_TABLE_CELL:
+   if (entering) {
+     cr(html);
+     if (state->in_table_header) {
+       cmark_strbuf_puts(html, "<th");
+     } else {
+       cmark_strbuf_puts(html, "<td");
+     }
+     S_render_sourcepos(node, html, options);
+     cmark_strbuf_putc(html, '>');
+   } else {
+     if (state->in_table_header) {
+       cmark_strbuf_puts(html, "</th>");
+     } else {
+       cmark_strbuf_puts(html, "</td>");
+     }
+   }
+   break;
+
   case CMARK_NODE_TEXT:
     escape_html(html, node->as.literal.data, node->as.literal.len);
     break;
@@ -324,7 +385,7 @@ char *cmark_render_html(cmark_node *root, int options) {
   cmark_strbuf html = GH_BUF_INIT;
   cmark_event_type ev_type;
   cmark_node *cur;
-  struct render_state state = {&html, NULL};
+  struct render_state state = {&html, NULL, false, false};
   cmark_iter *iter = cmark_iter_new(root);
 
   while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE) {
