@@ -175,8 +175,8 @@ char *cmark_render(cmark_node *root, int options, int width,
   result = (char *)cmark_strbuf_detach(renderer.buffer);
 
   cmark_iter_free(iter);
-  cmark_strbuf_free(renderer.prefix);
-  cmark_strbuf_free(renderer.buffer);
+  cmark_strbuf_release(renderer.prefix);
+  cmark_strbuf_release(renderer.buffer);
 
   return result;
 }

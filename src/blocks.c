@@ -95,9 +95,9 @@ cmark_parser *cmark_parser_new(int options) {
 }
 
 void cmark_parser_free(cmark_parser *parser) {
-  cmark_strbuf_free(parser->curline);
+  cmark_strbuf_release(parser->curline);
   free(parser->curline);
-  cmark_strbuf_free(parser->linebuf);
+  cmark_strbuf_release(parser->linebuf);
   free(parser->linebuf);
   cmark_reference_map_free(parser->refmap);
   free(parser);
@@ -1169,7 +1169,7 @@ cmark_node *cmark_parser_finish(cmark_parser *parser) {
     cmark_consolidate_text_nodes(parser->root);
   }
 
-  cmark_strbuf_free(parser->curline);
+  cmark_strbuf_release(parser->curline);
 
 #if CMARK_DEBUG_NODES
   if (cmark_node_check(parser->root, stderr)) {

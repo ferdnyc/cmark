@@ -99,7 +99,7 @@ static void S_free_nodes(cmark_node *e) {
   cmark_node *next;
   while (e != NULL) {
     if (S_is_block(e)) {
-      cmark_strbuf_free(&e->string_content);
+      cmark_strbuf_release(&e->string_content);
     }
     switch (e->type) {
     case CMARK_NODE_CODE_BLOCK:
