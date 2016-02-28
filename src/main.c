@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include "config.h"
 #include "cmark.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)

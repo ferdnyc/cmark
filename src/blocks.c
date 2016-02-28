@@ -10,7 +10,6 @@
 #include <stdio.h>
 
 #include "cmark_ctype.h"
-#include "config.h"
 #include "parser.h"
 #include "cmark.h"
 #include "node.h"

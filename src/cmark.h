@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <cmark_export.h>
 #include <cmark_version.h>
+#include <cmark_config.h>
 
 #ifdef __cplusplus
 extern "C" {

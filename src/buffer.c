@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "config.h"
 #include "cmark_ctype.h"
 #include "buffer.h"
 

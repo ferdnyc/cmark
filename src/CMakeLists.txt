@@ -135,6 +135,7 @@ install(FILES
   cmark.h
   ${CMAKE_CURRENT_BINARY_DIR}/cmark_export.h
   ${CMAKE_CURRENT_BINARY_DIR}/cmark_version.h
+  ${CMAKE_CURRENT_BINARY_DIR}/cmark_config.h
   DESTINATION include
   )
 
@@ -153,8 +154,8 @@ CHECK_C_SOURCE_COMPILES("
 " HAVE___ATTRIBUTE__)
 
 CONFIGURE_FILE(
-  ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmark_config.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/cmark_config.h)
 
 # Always compile with warnings
 if(MSVC)
