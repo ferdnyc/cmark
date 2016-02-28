@@ -100,6 +100,8 @@ static void S_free_nodes(cmark_node *e) {
     if (S_is_block(e)) {
       cmark_strbuf_release(&e->string_content);
     }
+    if (e->user_data && e->user_data_free_func)
+      e->user_data_free_func(e->user_data);
     switch (e->type) {
     case CMARK_NODE_CODE_BLOCK:
       cmark_chunk_free(&e->as.code.info);
@@ -260,6 +262,15 @@ int cmark_node_set_user_data(cmark_node *node, void *user_data) {
     return 0;
   }
   node->user_data = user_data;
+  return 1;
+}
+
+bool cmark_node_set_user_data_free_func(cmark_node *node,
+                                        CMarkNodeUserDataFreeFunc free_func) {
+  if (node == NULL) {
+    return 0;
+  }
+  node->user_data_free_func = free_func;
   return 1;
 }
 

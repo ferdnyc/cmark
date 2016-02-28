@@ -90,6 +90,8 @@ typedef struct cmark_strbuf cmark_strbuf;
 
 typedef int cmark_bufsize_t;
 
+typedef void (*CMarkNodeUserDataFreeFunc) (void *user_data);
+
 /**
  * ## Creating and Destroying Nodes
  */
@@ -234,6 +236,11 @@ CMARK_EXPORT void *cmark_node_get_user_data(cmark_node *node);
  * 0 on failure.
  */
 CMARK_EXPORT int cmark_node_set_user_data(cmark_node *node, void *user_data);
+
+/** Set free function for user data */
+CMARK_EXPORT
+bool cmark_node_set_user_data_free_func(cmark_node *node,
+                                        CMarkNodeUserDataFreeFunc free_func);
 
 /** Returns the type of 'node', or `CMARK_NODE_NONE` on error.
  */

@@ -55,6 +55,7 @@ struct cmark_node {
   struct cmark_node *last_child;
 
   void *user_data;
+  CMarkNodeUserDataFreeFunc user_data_free_func;
 
   int start_line;
   int start_column;
