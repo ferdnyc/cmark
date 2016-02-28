@@ -93,6 +93,33 @@ cmark_node *cmark_node_new(cmark_node_type type) {
   return node;
 }
 
+static void free_node_as(cmark_node *node) {
+  switch (node->type) {
+  case CMARK_NODE_CODE_BLOCK:
+    cmark_chunk_free(&node->as.code.info);
+    cmark_chunk_free(&node->as.code.literal);
+    break;
+  case CMARK_NODE_TEXT:
+  case CMARK_NODE_HTML_INLINE:
+  case CMARK_NODE_CODE:
+  case CMARK_NODE_HTML_BLOCK:
+    cmark_chunk_free(&node->as.literal);
+    break;
+  case CMARK_NODE_LINK:
+  case CMARK_NODE_IMAGE:
+    cmark_chunk_free(&node->as.link.url);
+    cmark_chunk_free(&node->as.link.title);
+    break;
+  case CMARK_NODE_CUSTOM_BLOCK:
+  case CMARK_NODE_CUSTOM_INLINE:
+    cmark_chunk_free(&node->as.custom.on_enter);
+    cmark_chunk_free(&node->as.custom.on_exit);
+    break;
+  default:
+    break;
+  }
+}
+
 // Free a cmark_node list and any children.
 static void S_free_nodes(cmark_node *e) {
   cmark_node *next;
@@ -100,30 +127,8 @@ static void S_free_nodes(cmark_node *e) {
     if (S_is_block(e)) {
       cmark_strbuf_release(&e->string_content);
     }
-    switch (e->type) {
-    case CMARK_NODE_CODE_BLOCK:
-      cmark_chunk_free(&e->as.code.info);
-      cmark_chunk_free(&e->as.code.literal);
-      break;
-    case CMARK_NODE_TEXT:
-    case CMARK_NODE_HTML_INLINE:
-    case CMARK_NODE_CODE:
-    case CMARK_NODE_HTML_BLOCK:
-      cmark_chunk_free(&e->as.literal);
-      break;
-    case CMARK_NODE_LINK:
-    case CMARK_NODE_IMAGE:
-      cmark_chunk_free(&e->as.link.url);
-      cmark_chunk_free(&e->as.link.title);
-      break;
-    case CMARK_NODE_CUSTOM_BLOCK:
-    case CMARK_NODE_CUSTOM_INLINE:
-      cmark_chunk_free(&e->as.custom.on_enter);
-      cmark_chunk_free(&e->as.custom.on_exit);
-      break;
-    default:
-      break;
-    }
+
+    free_node_as(e);
     if (e->last_child) {
       // Splice children into list
       e->last_child->next = e->next;
@@ -147,6 +152,15 @@ cmark_node_type cmark_node_get_type(cmark_node *node) {
   } else {
     return node->type;
   }
+}
+
+bool cmark_node_set_type(cmark_node * node, cmark_node_type type) {
+  if (type == node->type)
+    return true;
+
+  free_node_as(node);
+  node->type = type;
+  return true;
 }
 
 const char *cmark_node_get_type_string(cmark_node *node) {
