@@ -239,6 +239,12 @@ CMARK_EXPORT int cmark_node_set_user_data(cmark_node *node, void *user_data);
  */
 CMARK_EXPORT cmark_node_type cmark_node_get_type(cmark_node *node);
 
+/** Change the type of 'node'.
+ *
+ * Return 'true' if the type could be changed, 'false' otherwise.
+ */
+CMARK_EXPORT bool cmark_node_set_type(cmark_node *node, cmark_node_type type);
+
 /** Like 'cmark_node_get_type', but returns a string representation
     of the type, or `"<unknown>"`.
  */
