@@ -332,18 +332,15 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
   return parent;
 }
 
-// Add a node as child of another.  Return pointer to child.
-static cmark_node *add_child(cmark_parser *parser, cmark_node *parent,
-                             cmark_node_type block_type, int start_column) {
-  assert(parent);
-
+static void add_child(cmark_parser *parser,
+                                  cmark_node *parent,
+                                  cmark_node *child) {
   // if 'parent' isn't the kind of node that can accept this child,
   // then back up til we hit a node that can.
-  while (!can_contain(parent->type, block_type)) {
+  while (!can_contain(parent->type, child->type)) {
     parent = finalize(parser, parent);
   }
 
-  cmark_node *child = make_block(block_type, parser->line_number, start_column);
   child->parent = parent;
 
   if (parent->last_child) {
@@ -354,6 +351,17 @@ static cmark_node *add_child(cmark_parser *parser, cmark_node *parent,
     child->prev = NULL;
   }
   parent->last_child = child;
+}
+
+// Add a node as child of another.  Return pointer to child.
+static cmark_node *add_child_with_type(cmark_parser *parser, cmark_node *parent,
+                             cmark_node_type block_type, int start_column) {
+  assert(parent);
+
+  cmark_node *child = make_block(block_type, parser->line_number, start_column);
+
+  add_child (parser, parent, child);
+
   return child;
 }
 
@@ -850,7 +858,7 @@ static void open_new_blocks(cmark_parser *parser,
       if (S_is_space_or_tab(peek_at(input, parser->offset))) {
         S_advance_offset(parser, input, 1, true);
       }
-      *container = add_child(parser, *container, CMARK_NODE_BLOCK_QUOTE,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_BLOCK_QUOTE,
                             parser->offset + 1);
 
     } else if (!indented && (matched = scan_atx_heading_start(
@@ -862,7 +870,7 @@ static void open_new_blocks(cmark_parser *parser,
                        parser->first_nonspace + matched - parser->offset,
                        false);
       *container =
-          add_child(parser, *container, CMARK_NODE_HEADING, parser->offset + 1);
+          add_child_with_type(parser, *container, CMARK_NODE_HEADING, parser->offset + 1);
 
       hashpos = cmark_chunk_strchr(input, '#', parser->first_nonspace);
 
@@ -876,7 +884,7 @@ static void open_new_blocks(cmark_parser *parser,
 
     } else if (!indented && (matched = scan_open_code_fence(
                                  input, parser->first_nonspace))) {
-      *container = add_child(parser, *container, CMARK_NODE_CODE_BLOCK,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_CODE_BLOCK,
                             parser->first_nonspace + 1);
       (*container)->as.code.fenced = true;
       (*container)->as.code.fence_char = peek_at(input, parser->first_nonspace);
@@ -893,7 +901,7 @@ static void open_new_blocks(cmark_parser *parser,
                              (cont_type != CMARK_NODE_PARAGRAPH &&
                               (matched = scan_html_block_start_7(
                                    input, parser->first_nonspace))))) {
-      *container = add_child(parser, *container, CMARK_NODE_HTML_BLOCK,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_HTML_BLOCK,
                             parser->first_nonspace + 1);
       (*container)->as.html_block_type = matched;
       // note, we don't adjust parser->offset because the tag is part of the
@@ -910,7 +918,7 @@ static void open_new_blocks(cmark_parser *parser,
                (matched =
                     scan_thematic_break(input, parser->first_nonspace))) {
       // it's only now that we know the line is not part of a setext heading:
-      *container = add_child(parser, *container, CMARK_NODE_THEMATIC_BREAK,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_THEMATIC_BREAK,
                             parser->first_nonspace + 1);
       S_advance_offset(parser, input, input->len - 1 - parser->offset, false);
     } else if ((matched =
@@ -954,21 +962,21 @@ static void open_new_blocks(cmark_parser *parser,
 
       if (cont_type != CMARK_NODE_LIST ||
           !lists_match(&((*container)->as.list), data)) {
-        *container = add_child(parser, *container, CMARK_NODE_LIST,
+        *container = add_child_with_type(parser, *container, CMARK_NODE_LIST,
                               parser->first_nonspace + 1);
 
         memcpy(&((*container)->as.list), data, sizeof(*data));
       }
 
       // add the list item
-      *container = add_child(parser, *container, CMARK_NODE_ITEM,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_ITEM,
                             parser->first_nonspace + 1);
       /* TODO: static */
       memcpy(&((*container)->as.list), data, sizeof(*data));
       free(data);
     } else if (indented && !maybe_lazy && !parser->blank) {
       S_advance_offset(parser, input, CODE_INDENT, true);
-      *container = add_child(parser, *container, CMARK_NODE_CODE_BLOCK,
+      *container = add_child_with_type(parser, *container, CMARK_NODE_CODE_BLOCK,
                             parser->offset + 1);
       (*container)->as.code.fenced = false;
       (*container)->as.code.fence_char = 0;
@@ -1093,7 +1101,7 @@ static void add_text_to_container (cmark_parser *parser,
       add_line(container, input, parser);
     } else {
       // create paragraph container for line
-      container = add_child(parser, container, CMARK_NODE_PARAGRAPH,
+      container = add_child_with_type(parser, container, CMARK_NODE_PARAGRAPH,
                             parser->first_nonspace + 1);
       S_advance_offset(parser, input, parser->first_nonspace - parser->offset, false);
       add_line(container, input, parser);
@@ -1212,4 +1220,25 @@ bool cmark_parser_has_partially_consumed_tab(cmark_parser *parser) {
 
 cmark_bufsize_t cmark_parser_get_last_line_length(cmark_parser *parser) {
   return parser->last_line_length;
+}
+
+void cmark_parser_add_child(cmark_parser *parser,
+                            cmark_node   *parent,
+                            cmark_node   *child) {
+  add_child(parser, parent, child);
+}
+
+cmark_node *cmark_parser_make_block(cmark_node_type tag,
+                                    int start_line,
+                                    int start_column) {
+  return make_block(tag, start_line, start_column);
+}
+
+void cmark_parser_advance_offset(cmark_parser *parser,
+                                 const char *input,
+                                 int count,
+                                 bool columns) {
+  cmark_chunk input_chunk = cmark_chunk_literal(input);
+
+  S_advance_offset(parser, &input_chunk, count, columns);
 }
