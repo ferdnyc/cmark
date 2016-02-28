@@ -149,6 +149,11 @@ cmark_node_type cmark_node_get_type(cmark_node *node) {
   }
 }
 
+bool cmark_node_set_type(cmark_node * node, cmark_node_type type) {
+  node->type = type;
+  return true;
+}
+
 const char *cmark_node_get_type_string(cmark_node *node) {
   if (node == NULL) {
     return "NONE";
