@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <ctype.h>
 
-#include "config.h"
 #include "cmark.h"
 #include "node.h"
 #include "buffer.h"
