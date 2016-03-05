@@ -69,6 +69,11 @@ static cmark_node *make_document() {
 bool cmark_parser_attach_syntax_extension(cmark_parser *parser,
                                       cmark_syntax_extension *extension) {
   parser->syntax_extensions = cmark_llist_append(parser->syntax_extensions, extension);
+  if (extension->match_inline && extension->insert_inline_from_delim) {
+    parser->inline_syntax_extensions = cmark_llist_append(
+        parser->inline_syntax_extensions, extension);
+  }
+
   return true;
 }
 
@@ -97,6 +102,7 @@ cmark_parser *cmark_parser_new(int options) {
   parser->options = options;
   parser->last_buffer_ended_with_cr = false;
   parser->syntax_extensions = NULL;
+  parser->inline_syntax_extensions = NULL;
 
   return parser;
 }
@@ -108,6 +114,7 @@ void cmark_parser_free(cmark_parser *parser) {
   free(parser->linebuf);
   cmark_reference_map_free(parser->refmap);
   cmark_llist_free(parser->syntax_extensions);
+  cmark_llist_free(parser->inline_syntax_extensions);
   free(parser);
 }
 
@@ -374,22 +381,42 @@ static cmark_node *add_child(cmark_parser *parser, cmark_node *parent,
   return child;
 }
 
+static void manage_extensions_special_characters(cmark_parser *parser, bool add) {
+  cmark_llist *tmp_ext;
+
+  for (tmp_ext = parser->inline_syntax_extensions; tmp_ext; tmp_ext=tmp_ext->next) {
+    cmark_syntax_extension *ext = (cmark_syntax_extension *) tmp_ext->data;
+    cmark_llist *tmp_char;
+    for (tmp_char = ext->special_inline_chars; tmp_char; tmp_char=tmp_char->next) {
+      unsigned char c = (unsigned char) (unsigned long) tmp_char->data;
+      if (add)
+        cmark_inlines_add_special_character(c);
+      else
+        cmark_inlines_remove_special_character(c);
+    }
+  }
+}
+
 // Walk through node and all children, recursively, parsing
 // string content into inline content where appropriate.
-static void process_inlines(cmark_node *root, cmark_reference_map *refmap,
+static void process_inlines(cmark_parser *parser, cmark_reference_map *refmap,
                             int options) {
-  cmark_iter *iter = cmark_iter_new(root);
+  cmark_iter *iter = cmark_iter_new(parser->root);
   cmark_node *cur;
   cmark_event_type ev_type;
+
+  manage_extensions_special_characters(parser, true);
 
   while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE) {
     cur = cmark_iter_get_node(iter);
     if (ev_type == CMARK_EVENT_ENTER) {
       if (contains_inlines(cur->type)) {
-        cmark_parse_inlines(cur, refmap, options);
+        cmark_parse_inlines(parser, cur, refmap, options);
       }
     }
   }
+
+  manage_extensions_special_characters(parser, false);
 
   cmark_iter_free(iter);
 }
@@ -478,7 +505,7 @@ static cmark_node *finalize_document(cmark_parser *parser) {
   }
 
   finalize(parser, parser->root);
-  process_inlines(parser->root, parser->refmap, parser->options);
+  process_inlines(parser, parser->refmap, parser->options);
 
   return parser->root;
 }

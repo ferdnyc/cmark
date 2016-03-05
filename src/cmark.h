@@ -861,6 +861,18 @@ typedef bool (*MatchBlockFunc)        (cmark_syntax_extension *extension,
                                        const char *input,
                                        cmark_node *container);
 
+typedef cmark_node *(*MatchInlineFunc)(cmark_syntax_extension *extension,
+                                       cmark_parser *parser,
+                                       cmark_node *parent,
+                                       unsigned char character,
+                                       cmark_inline_parser *inline_parser);
+
+typedef delimiter *(*InlineFromDelimFunc)(cmark_syntax_extension *extension,
+                                           cmark_parser *parser,
+                                           cmark_inline_parser *inline_parser,
+                                           delimiter *opener,
+                                           delimiter *closer);
+
 /** A syntax extension that can be attached to a cmark_parser
  * with cmark_parser_attach_syntax_extension().
  *
@@ -869,7 +881,9 @@ typedef bool (*MatchBlockFunc)        (cmark_syntax_extension *extension,
  * implement new functionality.
  *
  * Their calling order and expected behaviour match the procedure outlined
- * at <http://spec.commonmark.org/0.24/#phase-1-block-structure>:
+ * at <http://spec.commonmark.org/0.24/#appendix-a-parsing-strategy>
+ *
+ * #### Block parsing phase hooks
  *
  * During step 1, cmark will call 'last_block_matches' when it
  * iterates over an open block created by this extension,
@@ -884,10 +898,45 @@ typedef bool (*MatchBlockFunc)        (cmark_syntax_extension *extension,
  * new block with cmark_parser_make_block and cmark_parser_add_child.
  * If 'try_opening_block' is NULL, the extension will have
  * no effect at all on the final AST.
+ *
+ * #### Inline parsing phase hooks
+ *
+ * For each character listed by the extension in 'special_inline_chars',
+ * 'match_inline' will get called, it is the responsibility of the extension
+ * to scan the characters located at the current inline parsing offset
+ * with the cmark_inline_parser API.
+ *
+ * Depending on the type of the extension, it can either:
+ *
+ * * Scan forward, determine that the syntax matches and return
+ *   a newly-created inline node with the appropriate type.
+ *   This is the technique that would be used if inline code
+ *   (with backticks) was implemented as an extension.
+ * * Scan only the character(s) that its syntax rules require
+ *   for opening and closing nodes, push a delimiter on the
+ *   delimiter stack, and return a simple text node with its
+ *   contents set to the character(s) consumed.
+ *   This is the technique that would be used if emphasis
+ *   inlines were implemented as an extension.
+ *
+ * When an extension has pushed delimiters on the stack,
+ * 'insert_inline_from_delim' will get called in a latter phase,
+ * when the inline parser has matched opener and closer delimiters
+ * created by the extension together.
+ *
+ * It is then the responsibility of the extension to modify
+ * and populate the opener inline text node, and to remove
+ * the necessary delimiters from the delimiter stack.
+ *
+ * Finally, the extension should return NULL if its scan didn't
+ * match its syntax rules.
  */
 struct cmark_syntax_extension {
   MatchBlockFunc          last_block_matches;
   OpenBlockFunc           try_opening_block;
+  MatchInlineFunc         match_inline;
+  InlineFromDelimFunc     insert_inline_from_delim;
+  cmark_llist           * special_inline_chars;
   char                  * name;
 };
 

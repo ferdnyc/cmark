@@ -4,6 +4,7 @@
 #include "buffer.h"
 
 void cmark_syntax_extension_free(cmark_syntax_extension *extension) {
+  cmark_llist_free(extension->special_inline_chars);
   free(extension->name);
   free(extension);
 }
