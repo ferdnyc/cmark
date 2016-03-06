@@ -77,9 +77,31 @@ bool cmark_parser_attach_syntax_extension(cmark_parser *parser,
   return true;
 }
 
-cmark_parser *cmark_parser_new(int options) {
-  cmark_parser *parser = (cmark_parser *)malloc(sizeof(cmark_parser));
+static void cmark_parser_dispose(cmark_parser *parser) {
+  if (parser->root)
+    cmark_node_free(parser->root);
+
+  if (parser->curline)
+    cmark_strbuf_free(parser->curline);
+
+  if (parser->linebuf)
+    cmark_strbuf_free(parser->linebuf);
+
+  if (parser->refmap)
+    cmark_reference_map_free(parser->refmap);
+}
+
+static void cmark_parser_reset(cmark_parser *parser) {
+  cmark_llist *saved_exts = parser->syntax_extensions;
+  cmark_llist *saved_inline_exts = parser->inline_syntax_extensions;
+  int saved_options = parser->options;
+
+  cmark_parser_dispose(parser);
+
+  memset(parser, 0, sizeof(cmark_parser));
+
   cmark_node *document = make_document();
+
   cmark_strbuf *line = (cmark_strbuf *)malloc(sizeof(cmark_strbuf));
   cmark_strbuf *buf = (cmark_strbuf *)malloc(sizeof(cmark_strbuf));
   cmark_strbuf_init(line, 256);
@@ -88,31 +110,26 @@ cmark_parser *cmark_parser_new(int options) {
   parser->refmap = cmark_reference_map_new();
   parser->root = document;
   parser->current = document;
-  parser->line_number = 0;
-  parser->offset = 0;
-  parser->column = 0;
-  parser->first_nonspace = 0;
-  parser->first_nonspace_column = 0;
-  parser->indent = 0;
-  parser->blank = false;
-  parser->partially_consumed_tab = false;
   parser->curline = line;
-  parser->last_line_length = 0;
   parser->linebuf = buf;
-  parser->options = options;
+
   parser->last_buffer_ended_with_cr = false;
-  parser->syntax_extensions = NULL;
-  parser->inline_syntax_extensions = NULL;
+
+  parser->syntax_extensions = saved_exts;
+  parser->inline_syntax_extensions = saved_inline_exts;
+  parser->options = saved_options;
+}
+
+cmark_parser *cmark_parser_new(int options) {
+  cmark_parser *parser = (cmark_parser *)calloc(1, sizeof(cmark_parser));
+  cmark_parser_reset(parser);
+  parser->options = options;
 
   return parser;
 }
 
 void cmark_parser_free(cmark_parser *parser) {
-  cmark_strbuf_release(parser->curline);
-  free(parser->curline);
-  cmark_strbuf_release(parser->linebuf);
-  free(parser->linebuf);
-  cmark_reference_map_free(parser->refmap);
+  cmark_parser_dispose(parser);
   cmark_llist_free(parser->syntax_extensions);
   cmark_llist_free(parser->inline_syntax_extensions);
   free(parser);
@@ -1260,6 +1277,12 @@ finished:
 }
 
 cmark_node *cmark_parser_finish(cmark_parser *parser) {
+  cmark_node *res;
+
+  /* Parser was already finished once */
+  if (parser->root == NULL)
+    return NULL;
+
   if (parser->linebuf->size) {
     S_process_line(parser, parser->linebuf->ptr, parser->linebuf->size);
     cmark_strbuf_clear(parser->linebuf);
@@ -1278,7 +1301,13 @@ cmark_node *cmark_parser_finish(cmark_parser *parser) {
     abort();
   }
 #endif
-  return parser->root;
+
+  res = parser->root;
+  parser->root = NULL;
+
+  cmark_parser_reset(parser);
+
+  return res;
 }
 
 int cmark_parser_get_line_number(cmark_parser *parser) {
