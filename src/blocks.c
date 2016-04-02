@@ -561,6 +561,18 @@ void cmark_parser_feed(cmark_parser *parser, const char *buffer, size_t len) {
   S_parser_feed(parser, (const unsigned char *)buffer, len, false);
 }
 
+void cmark_parser_feed_reentrant(cmark_parser *parser, const char *buffer, size_t len) {
+  cmark_strbuf *saved_linebuf = parser->linebuf;
+  cmark_strbuf *buf = (cmark_strbuf *)malloc(sizeof(cmark_strbuf));
+  cmark_strbuf_init(buf, 0);
+
+  parser->linebuf = buf;
+  S_parser_feed(parser, (const unsigned char *)buffer, len, true);
+  cmark_strbuf_free(buf);
+
+  parser->linebuf = saved_linebuf;
+}
+
 static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
                           size_t len, bool eof) {
   const unsigned char *end = buffer + len;
@@ -1223,6 +1235,9 @@ static void S_process_line(cmark_parser *parser, const unsigned char *buffer,
   bool all_matched = true;
   cmark_node *container;
   cmark_chunk input;
+  cmark_node *current;
+
+  cmark_strbuf_clear(parser->curline);
 
   if (parser->options & CMARK_OPT_VALIDATE_UTF8)
     cmark_utf8proc_check(parser->curline, buffer, bytes);
@@ -1255,9 +1270,13 @@ static void S_process_line(cmark_parser *parser, const unsigned char *buffer,
   if (parser->blank && container->last_line_blank)
     break_out_of_lists(parser, &container);
 
+  current = parser->current;
+
   open_new_blocks(parser, &container, &input, all_matched);
 
-  add_text_to_container(parser, container, last_matched_container, &input);
+  /* parser->current might have changed if feed_reentrant was called */
+  if (current == parser->current)
+    add_text_to_container(parser, container, last_matched_container, &input);
 
 finished:
   parser->last_line_length = input.len;

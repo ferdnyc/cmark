@@ -562,6 +562,9 @@ void cmark_parser_free(cmark_parser *parser);
 CMARK_EXPORT
 void cmark_parser_feed(cmark_parser *parser, const char *buffer, size_t len);
 
+CMARK_EXPORT
+void cmark_parser_feed_reentrant(cmark_parser *parser, const char *buffer, size_t len);
+
 /** Finish parsing and return a pointer to a tree of nodes.
  */
 CMARK_EXPORT
