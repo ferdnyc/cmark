@@ -933,6 +933,9 @@ typedef delimiter *(*InlineFromDelimFunc)(cmark_syntax_extension *extension,
  *
  * Finally, the extension should return NULL if its scan didn't
  * match its syntax rules.
+ *
+ * The extension can store whatever private data it might need
+ * in priv, and optionally define a free function for this data.
  */
 struct cmark_syntax_extension {
   MatchBlockFunc          last_block_matches;
@@ -941,6 +944,8 @@ struct cmark_syntax_extension {
   InlineFromDelimFunc     insert_inline_from_delim;
   cmark_llist           * special_inline_chars;
   char                  * name;
+  void                  * priv;
+  void                    (*free_function) (void *);
 };
 
 /** Free a cmark_syntax_extension.
