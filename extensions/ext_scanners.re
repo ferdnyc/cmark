@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "ext_scanners.h"
 
-bufsize_t _ext_scan_at(bufsize_t (*scanner)(const unsigned char *), const char *s, bufsize_t offset)
+bufsize_t _core_ext_scan_at(bufsize_t (*scanner)(const unsigned char *), const char *s, bufsize_t offset)
 {
 	bufsize_t res;
 	bufsize_t len = strlen(s);

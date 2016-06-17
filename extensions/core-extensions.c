@@ -199,7 +199,7 @@ static bool table_matches(cmark_syntax_extension *self,
   return res;
 }
 
-static cmark_syntax_extension *register_table_syntax_extension(void) {
+cmark_syntax_extension *cmark_table_extension_new(void) {
   cmark_syntax_extension *ext = cmark_syntax_extension_new("piped-tables");
 
   ext->last_block_matches = table_matches;
@@ -278,7 +278,7 @@ static delimiter *strikethrough_insert(cmark_syntax_extension *self,
   return res;
 }
 
-static cmark_syntax_extension *create_strikethrough_extension(void) {
+cmark_syntax_extension *cmark_strikethrough_extension_new(void) {
   cmark_syntax_extension *ext = cmark_syntax_extension_new("tilde_strikethrough");
 
   ext->match_inline = strikethrough_match;
@@ -290,7 +290,7 @@ static cmark_syntax_extension *create_strikethrough_extension(void) {
 }
 
 bool init_libcmarkextensions(cmark_plugin *plugin) {
-  cmark_plugin_register_syntax_extension(plugin, register_table_syntax_extension());
-  cmark_plugin_register_syntax_extension(plugin, create_strikethrough_extension());
+  cmark_plugin_register_syntax_extension(plugin, cmark_table_extension_new());
+  cmark_plugin_register_syntax_extension(plugin, cmark_strikethrough_extension_new());
   return true;
 }
