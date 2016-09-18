@@ -75,37 +75,44 @@ static cmark_node *try_opening_table_header(cmark_syntax_extension *self,
                                             const char   * input) {
   bufsize_t matched = scan_table_start(input, cmark_parser_get_first_nonspace(parser));
   cmark_node *table_header;
+  cmark_node *ret = NULL;
   table_row *header_row = NULL;
   table_row *marker_row = NULL;
+  cmark_node_type ptype = cmark_node_get_type(parent_container);
 
   if (!matched)
     goto done;
 
-  header_row = row_from_string(cmark_node_get_string_content(parent_container));
-
-  if (!header_row) {
-    goto done;
-  }
+  if (ptype == CMARK_NODE_PARAGRAPH)
+    header_row = row_from_string(cmark_node_get_string_content(parent_container));
 
   marker_row = row_from_string(input + cmark_parser_get_first_nonspace(parser));
 
   assert(marker_row);
 
-  if (header_row->n_columns != marker_row->n_columns) {
-    goto done;
+  if (header_row && header_row->n_columns != marker_row->n_columns) {
+    free_table_row(header_row);
+    header_row = NULL;
   }
 
-  cmark_node_set_type(parent_container, CMARK_NODE_TABLE);
-  cmark_node_set_syntax_extension(parent_container, self);
-  cmark_node_set_n_table_columns(parent_container, header_row->n_columns);
+  if (header_row) {
+    ret = parent_container;
+    cmark_node_set_type(parent_container, CMARK_NODE_TABLE);
+  } else {
+    ret = cmark_parser_add_child(parser, parent_container,
+        CMARK_NODE_TABLE, cmark_parser_get_offset(parser));
+  }
 
-  table_header = cmark_parser_add_child(parser, parent_container,
-      CMARK_NODE_TABLE_ROW, cmark_parser_get_offset(parser));
-  cmark_node_set_syntax_extension(table_header, self);
-  cmark_node_set_is_table_header(table_header, true);
+  cmark_node_set_syntax_extension(ret, self);
+  cmark_node_set_n_table_columns(ret, marker_row->n_columns);
 
-  {
+  if (header_row) {
     cmark_llist *tmp;
+
+    table_header = cmark_parser_add_child(parser, parent_container,
+        CMARK_NODE_TABLE_ROW, cmark_parser_get_offset(parser));
+    cmark_node_set_syntax_extension(table_header, self);
+    cmark_node_set_is_table_header(table_header, true);
 
     for (tmp = header_row->cells; tmp; tmp = tmp->next) {
       cmark_strbuf *cell_buf = (cmark_strbuf *) tmp->data;
@@ -122,7 +129,7 @@ static cmark_node *try_opening_table_header(cmark_syntax_extension *self,
 done:
   free_table_row(header_row);
   free_table_row(marker_row);
-  return parent_container;
+  return ret;
 }
 
 static cmark_node *try_opening_table_row(cmark_syntax_extension *self,
@@ -172,7 +179,7 @@ static cmark_node *try_opening_table_block(cmark_syntax_extension * syntax_exten
                                            const char      * input) {
   cmark_node_type parent_type = cmark_node_get_type(parent_container);
 
-  if (!indented && parent_type == CMARK_NODE_PARAGRAPH) {
+  if (!indented && (parent_type == CMARK_NODE_PARAGRAPH || parent_type == CMARK_NODE_DOCUMENT)) {
     return try_opening_table_header(syntax_extension, parser, parent_container, input);
   } else if (!indented && parent_type == CMARK_NODE_TABLE) {
     return try_opening_table_row(syntax_extension, parser, parent_container, input);
