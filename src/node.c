@@ -73,6 +73,7 @@ static bool S_can_contain(cmark_node *node, cmark_node *child) {
            child->type == CMARK_NODE_STRONG ||
            child->type == CMARK_NODE_LINK ||
            child->type == CMARK_NODE_IMAGE ||
+           child->type == CMARK_NODE_HTML_INLINE ||
            child->type == CMARK_NODE_STRIKETHROUGH;
 
   default:
