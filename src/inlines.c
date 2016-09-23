@@ -1264,7 +1264,7 @@ char *cmark_inline_parser_take_while(cmark_inline_parser *parser, CMarkInlinePre
   bufsize_t startpos = parser->pos;
   bufsize_t len = 0;
 
-  while ((c = peek_char(parser)) && (*pred)(c)) {
+  while ((c = peek_char(parser)) && (*pred)(parser, c, parser->pos)) {
     advance(parser);
     len++;
   }

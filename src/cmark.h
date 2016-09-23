@@ -970,7 +970,7 @@ cmark_syntax_extension *cmark_syntax_extension_new (const char *name);
 
 /** Should return 'true' if the predicate matches 'c', 'false' otherwise
  */
-typedef int (*CMarkInlinePredicate)(int c);
+typedef int (*CMarkInlinePredicate)(cmark_inline_parser *parser, int c, int pos);
 
 /** Advance the current inline parsing offset */
 CMARK_EXPORT
