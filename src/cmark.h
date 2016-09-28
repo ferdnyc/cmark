@@ -580,6 +580,9 @@ cmark_node *cmark_parser_finish(cmark_parser *parser);
 CMARK_EXPORT
 bool cmark_parser_attach_syntax_extension(cmark_parser *parser, cmark_syntax_extension *extension);
 
+CMARK_EXPORT
+void cmark_parser_add_reference(cmark_parser *parser, const char *label, const char *url, const char *title);
+
 /** Parse a CommonMark document in 'buffer' of length 'len'.
  * Returns a pointer to a tree of nodes.
  */
@@ -596,6 +599,9 @@ cmark_node *cmark_parse_file(FILE *f, int options);
  */
 CMARK_EXPORT
 int cmark_parser_get_line_number(cmark_parser *parser);
+
+CMARK_EXPORT
+cmark_node *cmark_parser_get_root(cmark_parser *parser);
 
 /** Return the offset in bytes in the line being processed.
  *

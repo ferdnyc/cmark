@@ -1380,3 +1380,16 @@ void cmark_parser_advance_offset(cmark_parser *parser,
 
   S_advance_offset(parser, &input_chunk, count, columns);
 }
+
+CMARK_EXPORT
+void cmark_parser_add_reference(cmark_parser *parser, const char *label, const char *url, const char *title) {
+  cmark_chunk reflabel = cmark_chunk_literal(label);
+  cmark_chunk refurl = cmark_chunk_literal(url);
+  cmark_chunk reftitle = cmark_chunk_literal(title);
+
+  cmark_reference_create(parser->refmap, &reflabel, &refurl, &reftitle);
+}
+
+cmark_node *cmark_parser_get_root(cmark_parser *parser) {
+  return parser->root;
+}
