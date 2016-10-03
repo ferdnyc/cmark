@@ -976,7 +976,7 @@ cmark_syntax_extension *cmark_syntax_extension_new (const char *name);
 
 /** Should return 'true' if the predicate matches 'c', 'false' otherwise
  */
-typedef int (*CMarkInlinePredicate)(cmark_inline_parser *parser, int c, int pos);
+typedef int (*CMarkInlinePredicate)(int c, int pos, void *user_data);
 
 /** Advance the current inline parsing offset */
 CMARK_EXPORT
@@ -1005,7 +1005,7 @@ bool cmark_inline_parser_is_eof(cmark_inline_parser *parser);
  * while 'pred' matches. Free after usage.
  */
 CMARK_EXPORT
-char *cmark_inline_parser_take_while(cmark_inline_parser *parser, CMarkInlinePredicate pred);
+char *cmark_inline_parser_take_while(cmark_inline_parser *parser, CMarkInlinePredicate pred, void *user_data);
 
 /** Push a delimiter on the delimiter stack.
  * See <<http://spec.commonmark.org/0.24/#phase-2-inline-structure> for
