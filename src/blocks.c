@@ -94,7 +94,7 @@ cmark_parser *cmark_parser_new_with_mem(int options, cmark_mem *mem) {
   parser->current = document;
   parser->line_number = 0;
   parser->offset = 0;
-  parser->total_offset = 0;
+  parser->line_offset = 0;
   parser->last_block_offset = 0;
   parser->column = 0;
   parser->first_nonspace = 0;
@@ -349,8 +349,9 @@ static cmark_node *add_child(cmark_parser *parser, cmark_node *parent,
   cmark_node *child =
       make_block(parser->mem, block_type, parser->line_number, start_column);
 
-  child->begin_offsets.start = parser->total_offset;
-  child->begin_offsets.stop = parser->total_offset + parser->offset;
+  child->begin_offsets.start = parser->line_offset + parser->last_block_offset;
+  child->begin_offsets.stop = parser->line_offset + parser->offset;
+  parser->last_block_offset = parser->offset;
 
   child->parent = parent;
 
@@ -595,7 +596,7 @@ static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
     }
 
     chunk_len += buffer - skipped;
-    parser->total_offset += chunk_len;
+    parser->line_offset += chunk_len;
   }
 }
 
@@ -1166,6 +1167,7 @@ static void S_process_line(cmark_parser *parser, const unsigned char *buffer,
     cmark_strbuf_putc(&parser->curline, '\n');
 
   parser->offset = 0;
+  parser->last_block_offset = 0;
   parser->column = 0;
   parser->blank = false;
   parser->partially_consumed_tab = false;

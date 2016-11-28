@@ -19,8 +19,8 @@ struct cmark_parser {
   struct cmark_node *current;
   int line_number;
   bufsize_t offset;
-  bufsize_t total_offset;
-  bufsize_t last_block_offset;
+  bufsize_t line_offset; /* Total offset for this line, in bytes from the start of the document */
+  bufsize_t last_block_offset; /* Allow for multiple blocks to happen on the same line */
   bufsize_t column;
   bufsize_t first_nonspace;
   bufsize_t first_nonspace_column;
