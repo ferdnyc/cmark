@@ -962,6 +962,14 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
       // spaces indent, as long as the list container is still open.
       int i = 0;
 
+      if (cont_type != CMARK_NODE_LIST ||
+          !lists_match(&((*container)->as.list), data)) {
+        *container = add_child(parser, *container, CMARK_NODE_LIST,
+                               parser->first_nonspace + 1);
+
+        memcpy(&((*container)->as.list), data, sizeof(*data));
+      }
+
       // compute padding:
       S_advance_offset(parser, input,
                        parser->first_nonspace + matched - parser->offset,
@@ -996,13 +1004,6 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
 
       data->marker_offset = parser->indent;
 
-      if (cont_type != CMARK_NODE_LIST ||
-          !lists_match(&((*container)->as.list), data)) {
-        *container = add_child(parser, *container, CMARK_NODE_LIST,
-                               parser->first_nonspace + 1);
-
-        memcpy(&((*container)->as.list), data, sizeof(*data));
-      }
 
       // add the list item
       *container = add_child(parser, *container, CMARK_NODE_ITEM,
