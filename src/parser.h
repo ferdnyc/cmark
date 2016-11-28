@@ -19,6 +19,8 @@ struct cmark_parser {
   struct cmark_node *current;
   int line_number;
   bufsize_t offset;
+  bufsize_t total_offset;
+  bufsize_t last_block_offset;
   bufsize_t column;
   bufsize_t first_nonspace;
   bufsize_t first_nonspace_column;

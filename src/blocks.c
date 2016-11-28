@@ -94,6 +94,8 @@ cmark_parser *cmark_parser_new_with_mem(int options, cmark_mem *mem) {
   parser->current = document;
   parser->line_number = 0;
   parser->offset = 0;
+  parser->total_offset = 0;
+  parser->last_block_offset = 0;
   parser->column = 0;
   parser->first_nonspace = 0;
   parser->first_nonspace_column = 0;
@@ -346,6 +348,10 @@ static cmark_node *add_child(cmark_parser *parser, cmark_node *parent,
 
   cmark_node *child =
       make_block(parser->mem, block_type, parser->line_number, start_column);
+
+  child->begin_offsets.start = parser->total_offset;
+  child->begin_offsets.stop = parser->total_offset + parser->offset;
+
   child->parent = parent;
 
   if (parent->last_child) {
@@ -533,6 +539,7 @@ static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
   parser->last_buffer_ended_with_cr = false;
   while (buffer < end) {
     const unsigned char *eol;
+    const unsigned char *skipped;
     bufsize_t chunk_len;
     bool process = false;
     for (eol = buffer; eol < end; ++eol) {
@@ -549,6 +556,7 @@ static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
     }
 
     chunk_len = (eol - buffer);
+
     if (process) {
       if (parser->linebuf.size > 0) {
         cmark_strbuf_put(&parser->linebuf, buffer, chunk_len);
@@ -569,6 +577,7 @@ static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
     }
 
     buffer += chunk_len;
+    skipped = buffer;
     if (buffer < end) {
       if (*buffer == '\0') {
         // skip over NULL
@@ -584,6 +593,9 @@ static void S_parser_feed(cmark_parser *parser, const unsigned char *buffer,
           buffer++;
       }
     }
+
+    chunk_len += buffer - skipped;
+    parser->total_offset += chunk_len;
   }
 }
 

@@ -78,6 +78,8 @@ static CMARK_INLINE cmark_node *make_literal(cmark_mem *mem, cmark_node_type t,
   cmark_strbuf_init(mem, &e->content, 0);
   e->type = t;
   e->as.literal = s;
+  e->begin_offsets.start = 0;
+  e->begin_offsets.stop = 0;
   return e;
 }
 
@@ -85,6 +87,8 @@ static CMARK_INLINE cmark_node *make_literal(cmark_mem *mem, cmark_node_type t,
 static CMARK_INLINE cmark_node *make_simple(cmark_mem *mem, cmark_node_type t) {
   cmark_node *e = (cmark_node *)mem->calloc(1, sizeof(*e));
   cmark_strbuf_init(mem, &e->content, 0);
+  e->begin_offsets.start = 0;
+  e->begin_offsets.stop = 0;
   e->type = t;
   return e;
 }

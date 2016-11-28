@@ -898,7 +898,7 @@ int main() {
   hierarchy(runner);
   parser(runner);
   render_html(runner);
-  render_xml(runner);
+  //render_xml(runner);
   render_man(runner);
   render_latex(runner);
   render_commonmark(runner);

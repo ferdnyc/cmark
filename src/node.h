@@ -12,6 +12,12 @@ extern "C" {
 #include "buffer.h"
 #include "chunk.h"
 
+typedef struct
+{
+  bufsize_t start;
+  bufsize_t stop;
+} cmark_extents;
+
 typedef struct {
   cmark_list_type list_type;
   int marker_offset;
@@ -68,6 +74,9 @@ struct cmark_node {
   int end_column;
   uint16_t type;
   uint16_t flags;
+
+  cmark_extents begin_offsets;
+  cmark_extents end_offsets;
 
   union {
     cmark_chunk literal;
