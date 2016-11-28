@@ -915,18 +915,20 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
 
     } else if (!indented && (matched = scan_open_code_fence(
                                  input, parser->first_nonspace))) {
-      *container = add_child(parser, *container, CMARK_NODE_CODE_BLOCK,
-                             parser->first_nonspace + 1);
-      (*container)->as.code.fenced = true;
-      (*container)->as.code.fence_char = peek_at(input, parser->first_nonspace);
-      (*container)->as.code.fence_length = (matched > 255) ? 255 : matched;
-      (*container)->as.code.fence_offset =
-          (int8_t)(parser->first_nonspace - parser->offset);
-      (*container)->as.code.info = cmark_chunk_literal("");
+      bufsize_t fence_offset = (int8_t)(parser->first_nonspace - parser->offset);
+      bufsize_t code_startpos = parser->first_nonspace;
+
       S_advance_offset(parser, input,
                        parser->first_nonspace + matched - parser->offset,
                        false);
 
+      *container = add_child(parser, *container, CMARK_NODE_CODE_BLOCK,
+                             code_startpos + 1);
+      (*container)->as.code.fenced = true;
+      (*container)->as.code.fence_char = peek_at(input, code_startpos);
+      (*container)->as.code.fence_length = (matched > 255) ? 255 : matched;
+      (*container)->as.code.fence_offset = fence_offset;
+      (*container)->as.code.info = cmark_chunk_literal("");
     } else if (!indented && ((matched = scan_html_block_start(
                                   input, parser->first_nonspace)) ||
                              (cont_type != CMARK_NODE_PARAGRAPH &&
