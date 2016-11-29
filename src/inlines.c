@@ -618,6 +618,14 @@ static delimiter *S_insert_emph(subject *subj, delimiter *opener,
   }
   cmark_node_insert_after(opener_inl, emph);
 
+  emph->begin_offsets.start = opener_inl->extents.stop - use_delims;
+  emph->begin_offsets.stop = opener_inl->extents.stop;
+  opener_inl->extents.stop -= use_delims;
+
+  emph->end_offsets.start = closer_inl->extents.start;
+  emph->end_offsets.stop = closer_inl->extents.start + use_delims;
+  closer_inl->extents.start += use_delims;
+
   // if opener has 0 characters, remove it and its associated inline
   if (opener_num_chars == 0) {
     cmark_node_free(opener_inl);
