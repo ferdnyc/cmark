@@ -814,7 +814,7 @@ noMatch:
 }
 
 // Return a link, an image, or a literal close bracket.
-static cmark_node *handle_close_bracket(subject *subj) {
+static cmark_node *handle_close_bracket(subject *subj, cmark_node *parent) {
   bufsize_t initial_pos, after_link_text_pos;
   bufsize_t starturl, endurl, starttitle, endtitle, endall;
   bufsize_t n;
@@ -926,6 +926,12 @@ match:
   inl = make_simple(subj->mem, is_image ? CMARK_NODE_IMAGE : CMARK_NODE_LINK);
   inl->as.link.url = url;
   inl->as.link.title = title;
+
+  inl->begin_offsets.start = opener->inl_text->extents.start;
+  inl->begin_offsets.stop = opener->inl_text->extents.stop;
+  inl->end_offsets.start = parent->begin_offsets.stop + initial_pos - 1; // Include ']'
+  inl->end_offsets.stop = parent->begin_offsets.stop + subj->pos;
+
   cmark_node_insert_before(opener->inl_text, inl);
   // Add link text:
   tmp = opener->inl_text->next;
@@ -1073,7 +1079,7 @@ static int parse_inline(subject *subj, cmark_node *parent, int options) {
     push_bracket(subj, false, new_inl);
     break;
   case ']':
-    new_inl = handle_close_bracket(subj);
+    new_inl = handle_close_bracket(subj, parent);
     break;
   case '!':
     advance(subj);
