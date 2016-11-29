@@ -646,6 +646,7 @@ static cmark_node *handle_backslash(subject *subj) {
     advance(subj);
     return make_str(subj->mem, cmark_chunk_dup(&subj->input, subj->pos - 1, 1));
   } else if (!is_eof(subj) && skip_line_end(subj)) {
+    skip_spaces(subj);
     return make_linebreak(subj->mem);
   } else {
     return make_str(subj->mem, cmark_chunk_literal("\\"));
@@ -952,6 +953,7 @@ match:
 // Assumes the subject has a cr or newline at the current position.
 static cmark_node *handle_newline(subject *subj) {
   bufsize_t nlpos = subj->pos;
+
   // skip over cr, crlf, or lf:
   if (peek_at(subj, subj->pos) == '\r') {
     advance(subj);
@@ -1094,6 +1096,7 @@ extern void cmark_parse_inlines(cmark_mem *mem, cmark_node *parent,
                                 cmark_reference_map *refmap, int options) {
   subject subj;
   subject_from_buf(mem, &subj, &parent->content, refmap);
+  skip_spaces(&subj);
   cmark_chunk_rtrim(&subj.input);
 
   while (!is_eof(&subj) && parse_inline(&subj, parent, options))
@@ -1130,6 +1133,8 @@ bufsize_t cmark_parse_reference_inline(cmark_mem *mem, cmark_strbuf *input,
   bufsize_t beforetitle;
 
   subject_from_buf(mem, &subj, input, NULL);
+
+  skip_spaces(&subj);
 
   // parse label:
   if (!link_label(&subj, &lab) || lab.len == 0)

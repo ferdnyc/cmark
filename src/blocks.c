@@ -171,6 +171,7 @@ static CMARK_INLINE bool contains_inlines(cmark_node_type block_type) {
 static void add_line(cmark_node *node, cmark_chunk *ch, cmark_parser *parser) {
   int chars_to_tab;
   int i;
+
   assert(node->flags & CMARK_NODE__OPEN);
   if (parser->partially_consumed_tab) {
     parser->offset += 1; // skip over tab
@@ -262,11 +263,17 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
 
   switch (S_type(b)) {
   case CMARK_NODE_PARAGRAPH:
-    while (cmark_strbuf_at(node_content, 0) == '[' &&
-           (pos = cmark_parse_reference_inline(parser->mem, node_content,
-                                               parser->refmap))) {
+    {
+      bufsize_t first_nonspace = 0;
 
-      cmark_strbuf_drop(node_content, pos);
+      while (S_is_space_or_tab(cmark_strbuf_at(node_content, first_nonspace))) {
+        first_nonspace++;
+      }
+      while (cmark_strbuf_at(node_content, first_nonspace) == '[' &&
+            (pos = cmark_parse_reference_inline(parser->mem, node_content,
+                                               parser->refmap))) {
+        cmark_strbuf_drop(node_content, pos);
+      }
     }
     if (is_blank(node_content, 0)) {
       // remove blank node (former reference def)
@@ -1166,15 +1173,11 @@ static void add_text_to_container(cmark_parser *parser, cmark_node *container,
           container->as.heading.setext == false) {
         chop_trailing_hashtags(input);
       }
-      S_advance_offset(parser, input, parser->first_nonspace - parser->offset,
-                       false);
       add_line(container, input, parser);
     } else {
       // create paragraph container for line
       container = add_child(parser, container, CMARK_NODE_PARAGRAPH,
                             parser->first_nonspace + 1);
-      S_advance_offset(parser, input, parser->first_nonspace - parser->offset,
-                       false);
       add_line(container, input, parser);
     }
 
