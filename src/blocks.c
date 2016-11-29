@@ -278,6 +278,7 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
     if (is_blank(node_content, 0)) {
       // remove blank node (former reference def)
       cmark_node_free(b);
+      goto done;
     }
     break;
 
@@ -350,14 +351,19 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
     bufsize_t end_offset;
 
     end_offset = prev->begin_offsets.stop + cmark_strbuf_len(&prev->content);
-    if (prev->end_offsets.start < end_offset)
-      prev->end_offsets.start = end_offset;
+    prev->end_offsets.start = MAX(prev->end_offsets.start, end_offset);
     prev->end_offsets.stop = b->begin_offsets.start;
   }
 
-  if (parent)
+  if (parent) {
     parent->end_offsets.start = MAX(b->begin_offsets.stop + cmark_strbuf_len(&b->content), b->end_offsets.start);
+    parent->end_offsets.stop = MAX(parent->end_offsets.start, parent->end_offsets.stop);
+    if (!prev) {
+      parent->begin_offsets.stop = b->begin_offsets.start;
+    }
+  }
 
+done:
   return parent;
 }
 
@@ -510,24 +516,13 @@ static int lists_match(cmark_list *list_data, cmark_list *item_data) {
 }
 
 static cmark_node *finalize_document(cmark_parser *parser) {
-  cmark_node *last;
-
   while (parser->current != parser->root) {
     parser->current = finalize(parser, parser->current);
   }
 
   finalize(parser, parser->root);
 
-  last = cmark_node_last_child(parser->root);
-
-  if (last) {
-    bufsize_t end_offset;
-
-    end_offset = last->begin_offsets.stop + cmark_strbuf_len(&last->content);
-    if (last->end_offsets.start < end_offset)
-      last->end_offsets.start = end_offset;
-    last->end_offsets.stop = parser->line_offset;
-  }
+  parser->root->end_offsets.stop = parser->line_offset;
 
   process_inlines(parser->mem, parser->root, parser->refmap, parser->options);
 

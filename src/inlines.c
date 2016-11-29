@@ -30,6 +30,10 @@ static const char *RIGHTSINGLEQUOTE = "\xE2\x80\x99";
 #define make_emph(mem) make_simple(mem, CMARK_NODE_EMPH)
 #define make_strong(mem) make_simple(mem, CMARK_NODE_STRONG)
 
+#ifndef MAX
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+
 typedef struct delimiter {
   struct delimiter *previous;
   struct delimiter *next;
@@ -1108,6 +1112,7 @@ extern void cmark_parse_inlines(cmark_mem *mem, cmark_node *parent,
   subject subj;
   subject_from_buf(mem, &subj, &parent->content, refmap);
   skip_spaces(&subj);
+  bufsize_t initial_pos = subj.pos;
   cmark_chunk_rtrim(&subj.input);
 
   while (!is_eof(&subj) && parse_inline(&subj, parent, options))
@@ -1118,6 +1123,11 @@ extern void cmark_parse_inlines(cmark_mem *mem, cmark_node *parent,
   while (subj.last_bracket) {
     pop_bracket(&subj);
   }
+
+  parent->begin_offsets.stop += initial_pos;
+  parent->end_offsets.start = parent->begin_offsets.stop + subj.pos - initial_pos;
+  parent->end_offsets.stop = MAX(parent->end_offsets.stop,
+      parent->begin_offsets.stop + cmark_strbuf_len(&parent->content) - initial_pos);
 }
 
 // Parse zero or more space characters, including at most one newline.
