@@ -16,6 +16,7 @@ struct cmark_parser {
   struct cmark_mem *mem;
   struct cmark_reference_map *refmap;
   struct cmark_node *root;
+  struct cmark_node *previous;
   struct cmark_node *current;
   int line_number;
   bufsize_t offset;

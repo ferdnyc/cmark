@@ -53,6 +53,9 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     snprintf(buffer, BUFFER_SIZE, " start-extents=\"%d:%d\"",
              node->begin_offsets.start, node->begin_offsets.stop);
     cmark_strbuf_puts(xml, buffer);
+    snprintf(buffer, BUFFER_SIZE, " end-extents=\"%d:%d\"",
+             node->end_offsets.start, node->end_offsets.stop);
+    cmark_strbuf_puts(xml, buffer);
 
     literal = false;
 

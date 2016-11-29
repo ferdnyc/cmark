@@ -28,6 +28,10 @@
 #define MIN(x, y) ((x < y) ? x : y)
 #endif
 
+#ifndef MAX
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+
 #define peek_at(i, n) (i)->data[n]
 
 static bool S_last_line_blank(const cmark_node *node) {
@@ -229,6 +233,7 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
   cmark_node *item;
   cmark_node *subitem;
   cmark_node *parent;
+  cmark_node *prev;
 
   parent = b->parent;
   assert(b->flags &
@@ -331,6 +336,20 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
   default:
     break;
   }
+
+  prev = cmark_node_previous(b);
+
+  if (prev) {
+    bufsize_t end_offset;
+
+    end_offset = prev->begin_offsets.stop + cmark_strbuf_len(&prev->content);
+    if (prev->end_offsets.start < end_offset)
+      prev->end_offsets.start = end_offset;
+    prev->end_offsets.stop = b->begin_offsets.start;
+  }
+
+  if (parent)
+    parent->end_offsets.start = MAX(b->begin_offsets.stop + cmark_strbuf_len(&b->content), b->end_offsets.start);
 
   return parent;
 }
@@ -484,11 +503,25 @@ static int lists_match(cmark_list *list_data, cmark_list *item_data) {
 }
 
 static cmark_node *finalize_document(cmark_parser *parser) {
+  cmark_node *last;
+
   while (parser->current != parser->root) {
     parser->current = finalize(parser, parser->current);
   }
 
   finalize(parser, parser->root);
+
+  last = cmark_node_last_child(parser->root);
+
+  if (last) {
+    bufsize_t end_offset;
+
+    end_offset = last->begin_offsets.stop + cmark_strbuf_len(&last->content);
+    if (last->end_offsets.start < end_offset)
+      last->end_offsets.start = end_offset;
+    last->end_offsets.stop = parser->line_offset;
+  }
+
   process_inlines(parser->mem, parser->root, parser->refmap, parser->options);
 
   return parser->root;
