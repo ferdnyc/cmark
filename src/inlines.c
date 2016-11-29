@@ -1021,6 +1021,7 @@ static int parse_inline(subject *subj, cmark_node *parent, int options) {
   cmark_chunk contents;
   unsigned char c;
   bufsize_t endpos;
+  bufsize_t startpos = subj->pos;
   c = peek_char(subj);
   if (c == 0) {
     return 0;
@@ -1085,6 +1086,8 @@ static int parse_inline(subject *subj, cmark_node *parent, int options) {
     new_inl = make_str(subj->mem, contents);
   }
   if (new_inl != NULL) {
+    new_inl->extents.start = parent->begin_offsets.stop + startpos;
+    new_inl->extents.stop = parent->begin_offsets.stop + subj->pos;
     cmark_node_append_child(parent, new_inl);
   }
 

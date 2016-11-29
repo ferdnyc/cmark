@@ -76,6 +76,7 @@ struct cmark_node {
   uint16_t flags;
 
   cmark_extents begin_offsets;
+  cmark_extents extents;
   cmark_extents end_offsets;
 
   union {
