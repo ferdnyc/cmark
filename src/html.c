@@ -345,7 +345,12 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
         cmark_strbuf_puts(html, "\" title=\"");
         escape_html(html, node->as.link.title.data, node->as.link.title.len);
       }
-      cmark_strbuf_puts(html, "\">");
+      cmark_strbuf_puts(html, "\"");
+      if (node->html_attrs) {
+        cmark_strbuf_putc(html, ' ');
+        cmark_strbuf_puts(html, node->html_attrs);
+      }
+      cmark_strbuf_puts(html, ">");
     } else {
       cmark_strbuf_puts(html, "</a>");
     }

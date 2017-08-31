@@ -309,6 +309,9 @@ CMARK_EXPORT
 bool cmark_node_set_user_data_free_func(cmark_node *node,
                                         CMarkNodeUserDataFreeFunc free_func);
 
+CMARK_EXPORT
+void cmark_node_set_html_attrs(cmark_node *node, const char *attrs);
+
 /** Returns the type of 'node', or `CMARK_NODE_NONE` on error.
  */
 CMARK_EXPORT cmark_node_type cmark_node_get_type(cmark_node *node);

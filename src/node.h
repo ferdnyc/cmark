@@ -79,6 +79,8 @@ struct cmark_node {
 
   cmark_syntax_extension *extension;
 
+  char *html_attrs;
+
   union {
     cmark_chunk literal;
     cmark_list list;
