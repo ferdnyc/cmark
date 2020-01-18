@@ -134,8 +134,8 @@ static void free_node_as(cmark_node *node) {
        break;
      case CMARK_NODE_CUSTOM_BLOCK:
      case CMARK_NODE_CUSTOM_INLINE:
-       cmark_chunk_free(NODE_MEM(node), &node->as.custom.on_enter);
-       cmark_chunk_free(NODE_MEM(node), &node->as.custom.on_exit);
+       NODE_MEM(node)->free(node->as.custom.on_enter);
+       NODE_MEM(node)->free(node->as.custom.on_exit);
        break;
      default:
        break;
@@ -672,7 +672,7 @@ const char *cmark_node_get_on_enter(cmark_node *node) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.custom.on_enter);
+    return node->as.custom.on_enter ? (char *)node->as.custom.on_enter : "";
   default:
     break;
   }
@@ -688,7 +688,7 @@ int cmark_node_set_on_enter(cmark_node *node, const char *on_enter) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.custom.on_enter, on_enter);
+    cmark_set_cstr(NODE_MEM(node), &node->as.custom.on_enter, on_enter);
     return 1;
   default:
     break;
@@ -705,7 +705,7 @@ const char *cmark_node_get_on_exit(cmark_node *node) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.custom.on_exit);
+    return node->as.custom.on_exit ? (char *)node->as.custom.on_exit : "";
   default:
     break;
   }
@@ -721,7 +721,7 @@ int cmark_node_set_on_exit(cmark_node *node, const char *on_exit) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.custom.on_exit, on_exit);
+    cmark_set_cstr(NODE_MEM(node), &node->as.custom.on_exit, on_exit);
     return 1;
   default:
     break;
