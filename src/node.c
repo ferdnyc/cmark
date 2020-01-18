@@ -129,8 +129,8 @@ static void free_node_as(cmark_node *node) {
        break;
      case CMARK_NODE_LINK:
      case CMARK_NODE_IMAGE:
-       cmark_chunk_free(NODE_MEM(node), &node->as.link.url);
-       cmark_chunk_free(NODE_MEM(node), &node->as.link.title);
+       NODE_MEM(node)->free(node->as.link.url);
+       NODE_MEM(node)->free(node->as.link.title);
        break;
      case CMARK_NODE_CUSTOM_BLOCK:
      case CMARK_NODE_CUSTOM_INLINE:
@@ -606,7 +606,7 @@ const char *cmark_node_get_url(cmark_node *node) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.link.url);
+    return node->as.link.url ? (char *)node->as.link.url : "";
   default:
     break;
   }
@@ -622,7 +622,7 @@ int cmark_node_set_url(cmark_node *node, const char *url) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.link.url, url);
+    cmark_set_cstr(NODE_MEM(node), &node->as.link.url, url);
     return 1;
   default:
     break;
@@ -639,7 +639,7 @@ const char *cmark_node_get_title(cmark_node *node) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.link.title);
+    return node->as.link.title ? (char *)node->as.link.title : "";
   default:
     break;
   }
@@ -655,7 +655,7 @@ int cmark_node_set_title(cmark_node *node, const char *title) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.link.title, title);
+    cmark_set_cstr(NODE_MEM(node), &node->as.link.title, title);
     return 1;
   default:
     break;
