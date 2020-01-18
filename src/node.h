@@ -10,7 +10,11 @@ extern "C" {
 
 #include "cmark.h"
 #include "buffer.h"
-#include "chunk.h"
+
+typedef struct {
+  unsigned char *data;
+  bufsize_t len;
+} cmark_literal;
 
 typedef struct {
   cmark_list_type list_type;
@@ -84,7 +88,7 @@ struct cmark_node {
   char *html_attrs;
 
   union {
-    cmark_chunk literal;
+    cmark_literal literal;
     cmark_list list;
     cmark_code code;
     cmark_heading heading;
