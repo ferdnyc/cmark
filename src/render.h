@@ -7,7 +7,6 @@ extern "C" {
 
 #include <stdlib.h>
 #include "buffer.h"
-#include "chunk.h"
 #include "memory.h"
 
 typedef enum { LITERAL, NORMAL, TITLE, URL } cmark_escaping;
