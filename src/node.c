@@ -5,8 +5,6 @@
 
 static void S_node_unlink(cmark_node *node);
 
-#define NODE_MEM(node) cmark_node_mem(node)
-
 static CMARK_INLINE bool S_is_block(cmark_node *node) {
   if (node == NULL) {
     return false;
@@ -87,7 +85,7 @@ static bool S_can_contain(cmark_node *node, cmark_node *child) {
 
 cmark_node *cmark_node_new_with_mem(cmark_node_type type, cmark_mem *mem) {
   cmark_node *node = (cmark_node *)mem->calloc(1, sizeof(*node));
-  cmark_strbuf_init(mem, &node->content, 0);
+  node->mem = mem;
   node->type = (uint16_t)type;
 
   switch (node->type) {
@@ -115,43 +113,44 @@ cmark_node *cmark_node_new(cmark_node_type type) {
   return cmark_node_new_with_mem(type, &DEFAULT_MEM_ALLOCATOR);
 }
 
-static void free_node_as(cmark_node *node) {
+static void free_node_as(cmark_node *node, cmark_mem *mem) {
+  cmark_node *next;
   switch (node->type) {
-     case CMARK_NODE_CODE_BLOCK:
-       cmark_chunk_free(NODE_MEM(node), &node->as.code.info);
-       cmark_chunk_free(NODE_MEM(node), &node->as.code.literal);
-       break;
-     case CMARK_NODE_TEXT:
-     case CMARK_NODE_HTML_INLINE:
-     case CMARK_NODE_CODE:
-     case CMARK_NODE_HTML_BLOCK:
-       NODE_MEM(node)->free(node->as.literal.data);
-       break;
-     case CMARK_NODE_LINK:
-     case CMARK_NODE_IMAGE:
-       NODE_MEM(node)->free(node->as.link.url);
-       NODE_MEM(node)->free(node->as.link.title);
-       break;
-     case CMARK_NODE_CUSTOM_BLOCK:
-     case CMARK_NODE_CUSTOM_INLINE:
-       NODE_MEM(node)->free(node->as.custom.on_enter);
-       NODE_MEM(node)->free(node->as.custom.on_exit);
-       break;
-     default:
-       break;
+    case CMARK_NODE_CODE_BLOCK:
+      mem->free(node->data);
+      mem->free(node->as.code.info);
+      break;
+    case CMARK_NODE_TEXT:
+    case CMARK_NODE_HTML_INLINE:
+    case CMARK_NODE_CODE:
+    case CMARK_NODE_HTML_BLOCK:
+      mem->free(node->data);
+      break;
+    case CMARK_NODE_LINK:
+    case CMARK_NODE_IMAGE:
+      mem->free(node->as.link.url);
+      mem->free(node->as.link.title);
+      break;
+    case CMARK_NODE_CUSTOM_BLOCK:
+    case CMARK_NODE_CUSTOM_INLINE:
+      mem->free(node->as.custom.on_enter);
+      mem->free(node->as.custom.on_exit);
+      break;
+    default:
+      break;
   }
 }
 
 // Free a cmark_node list and any children.
 static void S_free_nodes(cmark_node *e) {
+  cmark_mem *mem = e->mem;
   cmark_node *next;
   while (e != NULL) {
-    cmark_strbuf_release(&e->content);
 
     if (e->user_data && e->user_data_free_func)
       e->user_data_free_func(e->user_data);
 
-    free_node_as(e);
+    free_node_as(e, mem);
 
     if (e->last_child) {
       // Splice children into list
@@ -161,7 +160,7 @@ static void S_free_nodes(cmark_node *e) {
     next = e->next;
     if (e->html_attrs)
       free (e->html_attrs);
-    NODE_MEM(e)->free(e);
+    mem->free(e);
     e = next;
   }
 }
@@ -184,7 +183,7 @@ bool cmark_node_set_type(cmark_node * node, cmark_node_type type) {
   if (type == node->type)
     return true;
 
-  free_node_as(node);
+  free_node_as(node, node->mem);
   node->type = type;
   return true;
 }
@@ -355,10 +354,8 @@ const char *cmark_node_get_literal(cmark_node *node) {
   case CMARK_NODE_TEXT:
   case CMARK_NODE_HTML_INLINE:
   case CMARK_NODE_CODE:
-    return node->as.literal.data ? (char *)node->as.literal.data : "";
-
   case CMARK_NODE_CODE_BLOCK:
-    return (char *)node->as.code.literal;
+    return node->data ? (char *)node->data : "";
 
   default:
     break;
@@ -377,12 +374,8 @@ int cmark_node_set_literal(cmark_node *node, const char *content) {
   case CMARK_NODE_TEXT:
   case CMARK_NODE_HTML_INLINE:
   case CMARK_NODE_CODE:
-    node->as.literal.len = cmark_set_cstr(NODE_MEM(node),
-                                          &node->as.literal.data, content);
-    return 1;
-
   case CMARK_NODE_CODE_BLOCK:
-    cmark_set_cstr(NODE_MEM(node), &node->as.code.literal, content);
+    node->len = cmark_set_cstr(node->mem, &node->data, content);
     return 1;
 
   default:
@@ -560,7 +553,7 @@ int cmark_node_set_fence_info(cmark_node *node, const char *info) {
   }
 
   if (node->type == CMARK_NODE_CODE_BLOCK) {
-    cmark_set_cstr(NODE_MEM(node), &node->as.code.info, info);
+    cmark_set_cstr(node->mem, &node->as.code.info, info);
     return 1;
   } else {
     return 0;
@@ -623,7 +616,7 @@ int cmark_node_set_url(cmark_node *node, const char *url) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    cmark_set_cstr(NODE_MEM(node), &node->as.link.url, url);
+    cmark_set_cstr(node->mem, &node->as.link.url, url);
     return 1;
   default:
     break;
@@ -656,7 +649,7 @@ int cmark_node_set_title(cmark_node *node, const char *title) {
   switch (node->type) {
   case CMARK_NODE_LINK:
   case CMARK_NODE_IMAGE:
-    cmark_set_cstr(NODE_MEM(node), &node->as.link.title, title);
+    cmark_set_cstr(node->mem, &node->as.link.title, title);
     return 1;
   default:
     break;
@@ -689,7 +682,7 @@ int cmark_node_set_on_enter(cmark_node *node, const char *on_enter) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    cmark_set_cstr(NODE_MEM(node), &node->as.custom.on_enter, on_enter);
+    cmark_set_cstr(node->mem, &node->as.custom.on_enter, on_enter);
     return 1;
   default:
     break;
@@ -722,7 +715,7 @@ int cmark_node_set_on_exit(cmark_node *node, const char *on_exit) {
   switch (node->type) {
   case CMARK_NODE_CUSTOM_INLINE:
   case CMARK_NODE_CUSTOM_BLOCK:
-    cmark_set_cstr(NODE_MEM(node), &node->as.custom.on_exit, on_exit);
+    cmark_set_cstr(node->mem, &node->as.custom.on_exit, on_exit);
     return 1;
   default:
     break;

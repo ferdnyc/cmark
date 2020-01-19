@@ -8,13 +8,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 
+#include "config.h"
 #include "cmark.h"
 #include "buffer.h"
-
-typedef struct {
-  unsigned char *data;
-  bufsize_t len;
-} cmark_literal;
 
 typedef struct {
   int marker_offset;
@@ -28,7 +24,6 @@ typedef struct {
 
 typedef struct {
   unsigned char *info;
-  unsigned char *literal;
   uint8_t fence_length;
   uint8_t fence_offset;
   unsigned char fence_char;
@@ -64,7 +59,7 @@ typedef struct {
 } cmark_table_row;
 
 struct cmark_node {
-  cmark_strbuf content;
+  cmark_mem *mem;
 
   struct cmark_node *next;
   struct cmark_node *prev;
@@ -74,6 +69,9 @@ struct cmark_node {
 
   void *user_data;
   CMarkNodeUserDataFreeFunc user_data_free_func;
+
+  unsigned char *data;
+  bufsize_t len;
 
   int start_line;
   int start_column;
@@ -88,7 +86,6 @@ struct cmark_node {
   char *html_attrs;
 
   union {
-    cmark_literal literal;
     cmark_list list;
     cmark_code code;
     cmark_heading heading;
@@ -100,9 +97,6 @@ struct cmark_node {
   } as;
 };
 
-static CMARK_INLINE cmark_mem *cmark_node_mem(cmark_node *node) {
-  return node->content.mem;
-}
 CMARK_EXPORT int cmark_node_check(cmark_node *node, FILE *out);
 
 #ifdef __cplusplus

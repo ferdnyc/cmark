@@ -65,7 +65,7 @@ static bool print_document(cmark_node *document, writer_format writer,
   }
 
   printf("%s", result);
-  cmark_node_mem(document)->free(result);
+  document->mem->free(result);
 
   return true;
 }

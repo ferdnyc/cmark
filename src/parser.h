@@ -42,6 +42,7 @@ struct cmark_parser {
   bufsize_t last_line_length;
   /* FIXME: not sure about the difference with curline */
   cmark_strbuf linebuf;
+  cmark_strbuf content;
   /* Options set by the user, see the Options section in cmark.h */
   int options;
   bool last_buffer_ended_with_cr;

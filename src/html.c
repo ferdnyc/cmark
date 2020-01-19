@@ -62,7 +62,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     case CMARK_NODE_TEXT:
     case CMARK_NODE_CODE:
     case CMARK_NODE_HTML_INLINE:
-      escape_html(html, node->as.literal.data, node->as.literal.len);
+      escape_html(html, node->data, node->len);
       break;
 
     case CMARK_NODE_LINEBREAK:
@@ -165,8 +165,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
       cmark_strbuf_puts(html, "\">");
     }
 
-    escape_html(html, node->as.code.literal,
-                strlen((char *)node->as.code.literal));
+    escape_html(html, node->data, node->len);
     cmark_strbuf_puts(html, "</code></pre>\n");
     break;
 
@@ -175,7 +174,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     if (options & CMARK_OPT_SAFE) {
       cmark_strbuf_puts(html, "<!-- raw HTML omitted -->");
     } else {
-      cmark_strbuf_put(html, node->as.literal.data, node->as.literal.len);
+      cmark_strbuf_put(html, node->data, node->len);
     }
     cr(html);
     break;
@@ -278,7 +277,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
    break;
 
   case CMARK_NODE_TEXT:
-    escape_html(html, node->as.literal.data, node->as.literal.len);
+    escape_html(html, node->data, node->len);
     break;
 
   case CMARK_NODE_LINEBREAK:
@@ -297,7 +296,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
 
   case CMARK_NODE_CODE:
     cmark_strbuf_puts(html, "<code>");
-    escape_html(html, node->as.literal.data, node->as.literal.len);
+    escape_html(html, node->data, node->len);
     cmark_strbuf_puts(html, "</code>");
     break;
 
@@ -305,7 +304,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
     if (options & CMARK_OPT_SAFE) {
       cmark_strbuf_puts(html, "<!-- raw HTML omitted -->");
     } else {
-      cmark_strbuf_put(html, node->as.literal.data, node->as.literal.len);
+      cmark_strbuf_put(html, node->data, node->len);
     }
     break;
 
@@ -398,7 +397,7 @@ static int S_render_node(cmark_node *node, cmark_event_type ev_type,
 
 char *cmark_render_html(cmark_node *root, int options) {
   char *result;
-  cmark_strbuf html = CMARK_BUF_INIT(cmark_node_mem(root));
+  cmark_strbuf html = CMARK_BUF_INIT(root->mem);
   cmark_event_type ev_type;
   cmark_node *cur;
   struct render_state state = {&html, NULL, false, false};
