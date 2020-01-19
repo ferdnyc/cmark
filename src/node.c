@@ -440,7 +440,7 @@ cmark_list_type cmark_node_get_list_type(cmark_node *node) {
   }
 
   if (node->type == CMARK_NODE_LIST) {
-    return node->as.list.list_type;
+    return (cmark_list_type)node->as.list.list_type;
   } else {
     return CMARK_NO_LIST;
   }
@@ -456,7 +456,7 @@ int cmark_node_set_list_type(cmark_node *node, cmark_list_type type) {
   }
 
   if (node->type == CMARK_NODE_LIST) {
-    node->as.list.list_type = type;
+    node->as.list.list_type = (unsigned char)type;
     return 1;
   } else {
     return 0;
@@ -469,7 +469,7 @@ cmark_delim_type cmark_node_get_list_delim(cmark_node *node) {
   }
 
   if (node->type == CMARK_NODE_LIST) {
-    return node->as.list.delimiter;
+    return (cmark_delim_type)node->as.list.delimiter;
   } else {
     return CMARK_NO_DELIM;
   }
@@ -485,7 +485,7 @@ int cmark_node_set_list_delim(cmark_node *node, cmark_delim_type delim) {
   }
 
   if (node->type == CMARK_NODE_LIST) {
-    node->as.list.delimiter = delim;
+    node->as.list.delimiter = (unsigned char)delim;
     return 1;
   } else {
     return 0;
