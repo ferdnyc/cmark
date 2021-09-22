@@ -1128,6 +1128,7 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
         cmark_syntax_extension *ext = (cmark_syntax_extension *) tmp->data;
 
         if (ext->try_opening_block) {
+          cmark_node *current = parser->current;
           const char *input_cstr = cmark_chunk_to_cstr(parser->mem, input);
 
           new_container = ext->try_opening_block(
@@ -1135,6 +1136,11 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
 
           if (new_container) {
             *container = new_container;
+            break;
+          }
+
+          /* feed_reentrant was called, don't try other extensions */
+          if (parser->current != current) {
             break;
           }
         }
