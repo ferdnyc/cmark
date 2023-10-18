@@ -358,7 +358,7 @@ const char *cmark_node_get_literal(cmark_node *node) {
     return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.literal);
 
   case CMARK_NODE_CODE_BLOCK:
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.code.literal);
+    return (char *)node->as.code.literal;
 
   default:
     break;
@@ -381,7 +381,7 @@ int cmark_node_set_literal(cmark_node *node, const char *content) {
     return 1;
 
   case CMARK_NODE_CODE_BLOCK:
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.code.literal, content);
+    cmark_set_cstr(NODE_MEM(node), &node->as.code.literal, content);
     return 1;
 
   default:
@@ -547,7 +547,7 @@ const char *cmark_node_get_fence_info(cmark_node *node) {
   }
 
   if (node->type == CMARK_NODE_CODE_BLOCK) {
-    return cmark_chunk_to_cstr(NODE_MEM(node), &node->as.code.info);
+    return node->as.code.info ? (char *)node->as.code.info : "";
   } else {
     return NULL;
   }
@@ -559,7 +559,7 @@ int cmark_node_set_fence_info(cmark_node *node, const char *info) {
   }
 
   if (node->type == CMARK_NODE_CODE_BLOCK) {
-    cmark_chunk_set_cstr(NODE_MEM(node), &node->as.code.info, info);
+    cmark_set_cstr(NODE_MEM(node), &node->as.code.info, info);
     return 1;
   } else {
     return 0;

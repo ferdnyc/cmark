@@ -319,11 +319,15 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
       }
       assert(pos < node_content->size);
 
-      cmark_strbuf tmp = CMARK_BUF_INIT(parser->mem);
-      houdini_unescape_html_f(&tmp, node_content->ptr, pos);
-      cmark_strbuf_trim(&tmp);
-      cmark_strbuf_unescape(&tmp);
-      b->as.code.info = cmark_chunk_buf_detach(&tmp);
+      if (pos == 0) {
+        b->as.code.info = NULL;
+      } else {
+        cmark_strbuf tmp = CMARK_BUF_INIT(parser->mem);
+        houdini_unescape_html_f(&tmp, node_content->ptr, pos);
+        cmark_strbuf_trim(&tmp);
+        cmark_strbuf_unescape(&tmp);
+        b->as.code.info = cmark_strbuf_detach(&tmp);
+      }
 
       if (node_content->ptr[pos] == '\r')
         pos += 1;
@@ -331,7 +335,7 @@ static cmark_node *finalize(cmark_parser *parser, cmark_node *b) {
         pos += 1;
       cmark_strbuf_drop(node_content, pos);
     }
-    b->as.code.literal = cmark_chunk_buf_detach(node_content);
+    b->as.code.literal = cmark_strbuf_detach(node_content);
     break;
 
   case CMARK_NODE_HTML_BLOCK:
@@ -1010,7 +1014,7 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
       (*container)->as.code.fence_length = (matched > 255) ? 255 : matched;
       (*container)->as.code.fence_offset =
           (int8_t)(parser->first_nonspace - parser->offset);
-      (*container)->as.code.info = cmark_chunk_literal("");
+      (*container)->as.code.info = NULL;
       S_advance_offset(parser, input,
                        parser->first_nonspace + matched - parser->offset,
                        false);
@@ -1105,7 +1109,7 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
       (*container)->as.code.fence_char = 0;
       (*container)->as.code.fence_length = 0;
       (*container)->as.code.fence_offset = 0;
-      (*container)->as.code.info = cmark_chunk_literal("");
+      (*container)->as.code.info = NULL;
     } else {
       cmark_llist *tmp;
       cmark_node *new_container = NULL;
