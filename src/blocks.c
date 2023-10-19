@@ -567,7 +567,7 @@ static cmark_node *finalize_document(cmark_parser *parser) {
   finalize(parser, parser->root);
   process_inlines(parser, parser->refmap, parser->options);
 
-  cmark_strbuf_free(&parser->content);
+  cmark_strbuf_release(&parser->content);
 
   return parser->root;
 }
@@ -888,18 +888,12 @@ static bool parse_extension_block(cmark_parser *parser,
                                   cmark_node *container,
                                   cmark_chunk *input)
 {
-  const char *input_cstr;
-  bool res = false;
+  if (!container->extension->last_block_matches)
+    return false;
 
-  if (container->extension->last_block_matches) {
-    input_cstr = cmark_chunk_to_cstr(parser->mem, input);
-
-    if (container->extension->last_block_matches(
-        container->extension, parser, input_cstr, container))
-      res = true;
-  }
-
-  return res;
+  return container->extension->last_block_matches(
+            container->extension, parser,
+            (const char *)(input->data), container);
 }
 
 /**
@@ -1146,10 +1140,9 @@ static void open_new_blocks(cmark_parser *parser, cmark_node **container,
         cmark_syntax_extension *ext = (cmark_syntax_extension *) tmp->data;
 
         if (ext->try_opening_block) {
-          const char *input_cstr = cmark_chunk_to_cstr(parser->mem, input);
-
           new_container = ext->try_opening_block(
-              ext, indented, parser, *container, input_cstr);
+              ext, indented, parser, *container,
+              (const char *)(input->data));
 
           if (new_container) {
             *container = new_container;
@@ -1348,7 +1341,7 @@ finished:
   /* When passing the contents of the chunk to extensions,
    * the data in it gets allocated.
    */
-  cmark_chunk_free(parser->mem, &input);
+  cmark_chunk_free(&input);
 
   cmark_strbuf_clear(&parser->curline);
 }

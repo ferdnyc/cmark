@@ -114,7 +114,6 @@ cmark_node *cmark_node_new(cmark_node_type type) {
 }
 
 static void free_node_as(cmark_node *node, cmark_mem *mem) {
-  cmark_node *next;
   switch (node->type) {
     case CMARK_NODE_CODE_BLOCK:
       mem->free(node->data);
@@ -386,12 +385,45 @@ int cmark_node_set_literal(cmark_node *node, const char *content) {
 }
 
 const char *cmark_node_get_string_content(cmark_node *node) {
-  return cmark_strbuf_get(&node->content);
+  if (node == NULL) {
+    return NULL;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_HTML_BLOCK:
+  case CMARK_NODE_TEXT:
+  case CMARK_NODE_HTML_INLINE:
+  case CMARK_NODE_CODE:
+  case CMARK_NODE_CODE_BLOCK:
+    return node->data ? (char *)node->data : "";
+
+  default:
+    break;
+  }
+
+  return NULL;
 }
 
 bool cmark_node_set_string_content(cmark_node *node, const char *content) {
-  cmark_strbuf_sets(&node->content, content);
-  return true;
+  if (node == NULL) {
+    return 0;
+  }
+
+  switch (node->type) {
+  case CMARK_NODE_HTML_BLOCK:
+  case CMARK_NODE_TEXT:
+  case CMARK_NODE_HTML_INLINE:
+  case CMARK_NODE_CODE:
+  case CMARK_NODE_CODE_BLOCK:
+    node->len = cmark_set_cstr(node->mem, &node->data, content);
+    return 1;
+
+  default:
+    break;
+  }
+
+  return 0;
+
 }
 
 int cmark_node_get_heading_level(cmark_node *node) {
